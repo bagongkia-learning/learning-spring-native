@@ -7,94 +7,7 @@ on:
       - 'main'
 
 jobs:
-  build-non-windows-image:
-    name: 'Build Non-Windows Image'
-    strategy:
-      matrix:
-        os: ['macos-latest']
-        include:
-          - os: 'macos-latest'
-            label: 'mac'
-    runs-on: ${{matrix.os}}
-
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v2
-
-      - name: 'Setup Java 11'
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-
-      - name: Setup GraalVM
-        uses: DeLaGuardo/setup-graalvm@master
-        with:
-          graalvm: 21.3.0
-          java: java11
-
-      - name: 'Install Native Image Plugin'
-        run: |
-          gu install native-image
-          
-      - name: 'Change Maven Mode'
-        run: |
-          chmod 755 mvnw
-          
-      - name: 'Build Native Image'
-        run: |
-          ./mvnw -Pnative package -DskipTests 
-          
-      - name: 'List Target'
-        run: |
-          ls target
-          
-      - name: 'Change mode'
-        run: |
-          chmod 755 target/stev-report
-          
-      - name: 'Publish Native Image'
-        if: success()
-        uses: actions/upload-artifact@v2-preview
-        with:
-          name: 'stev-report'
-          path: target/stev-report
-          
-      - name: 'Create Release'
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-        with:
-          tag_name: ${{github.ref}}
-          release_name: Release ${{github.ref}}
-          body: |
-            Initial release
-          draft: false
-          prerelease: false
-
-      - name: 'Upload Release Asset'
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-        with:
-          upload_url: ${{steps.create_release.outputs.upload_url}}
-          asset_path: target/stev-report
-          asset_name: stev-report-${{matrix.label}}
-          asset_content_type: application/octet-stream
-
-      - name: 'Write Upload URL To File'
-        run: |
-          echo "${{steps.create_release.outputs.upload_url}}" > upload_url.txt
-          
-      - name: 'Publish Upload URL'
-        uses: actions/upload-artifact@v2-preview
-        with:
-          name: 'upload_url.txt'
-          path: 'upload_url.txt'
-
   build-windows-image:
-    needs: [build-non-windows-image]
     name: 'Build Windows Image'
     runs-on: windows-latest
 
@@ -116,11 +29,6 @@ jobs:
         run: |
           choco install visualstudio2017-workload-vctools
         shell: bash
-
-      - name: 'Get JAR Artifact'
-        uses: actions/download-artifact@v2-preview
-        with:
-          name: 'stev-report-${{env.VERSION}}-all.jar'
 
       - name: 'Build Native Image'
         shell: cmd
