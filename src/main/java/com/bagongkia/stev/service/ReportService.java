@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.bagongkia.stev.model.ExitItem;
+import com.bagongkia.stev.model.Income;
 import com.bagongkia.stev.model.LostItem;
+import com.bagongkia.stev.model.Order;
 import com.bagongkia.stev.model.Payment;
 import com.bagongkia.stev.model.ReturnedItem;
 import com.bagongkia.stev.model.Sale;
@@ -26,6 +28,9 @@ public class ReportService {
 	
 	@Autowired
 	private LostItemsFileWriter lostItemsFileWriter;
+	
+	@Autowired
+	private LostOrdersFileWriter lostOrdersFileWriter;
 	
 	@Autowired
 	private InvoiceWriter invoiceWriter;
@@ -87,5 +92,24 @@ public class ReportService {
 		List<ExitItem> exitItems = fileReader.readExitItemsFile(exitItemsFile.getInputStream());
 		invoiceWriter.writeUnprintedInvoice(sales, exitItems);
 		invoiceWriter.writeMultiplePrintedInvoice(sales, exitItems);
+	}
+	
+	public void generateLostOrdersReport(MultipartFile orderFile, MultipartFile incomeFile, 
+			MultipartFile returnedItemsFile, MultipartFile lostOrdersFile) throws Exception {
+		List<Order> orders = fileReader.readOrderFile(orderFile.getInputStream());
+		List<Income> incomes = fileReader.readIncomeFile(incomeFile.getInputStream());
+		List<ReturnedItem> returnedItems = new ArrayList<>();
+		if (returnedItemsFile != null) {
+			returnedItems = fileReader.readReturnedItemsFile(returnedItemsFile.getInputStream());
+		}
+		List<Order> lostOrders = new ArrayList<>();
+		if (lostOrdersFile != null) {
+			lostOrders = fileReader.readLostOrdersFile(lostOrdersFile.getInputStream());
+		}
+		lostOrdersFileWriter.write(lostOrders, orders, incomes, returnedItems);
+	}
+	
+	public Resource getLostOrdersReport() {
+		return fileStorageService.getFile("lost-orders-report.xlsx");
 	}
 }
