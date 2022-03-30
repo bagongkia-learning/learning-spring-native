@@ -18,7 +18,9 @@ import org.springframework.stereotype.Service;
 
 import com.bagongkia.stev.ReportException;
 import com.bagongkia.stev.model.ExitItem;
+import com.bagongkia.stev.model.Income;
 import com.bagongkia.stev.model.LostItem;
+import com.bagongkia.stev.model.Order;
 import com.bagongkia.stev.model.Payment;
 import com.bagongkia.stev.model.ReturnedItem;
 import com.bagongkia.stev.model.Sale;
@@ -220,5 +222,153 @@ public class FileReader {
 		}
 		log.info("Exit Items Records size: {}", exitItems.size());
 		return exitItems;
+	}
+	
+	public List<Order> readOrderFile(InputStream inputStream) throws IOException, ReportException {
+		List<Order> orderList = new ArrayList<>();
+		Workbook workbook = WorkbookFactory.create(inputStream);
+		try {
+			Iterator<Sheet> sheetIterator = workbook.iterator();
+			int i = 0;
+			if (sheetIterator.hasNext()) {
+				Sheet sheet = sheetIterator.next();
+				Iterator<Row> rowIterator = sheet.iterator();
+				int rowNum = 0;
+			    while (rowIterator.hasNext()) {
+			    	Row row = rowIterator.next();
+			        Iterator<Cell> cellIterator = row.cellIterator();
+			        i = 0;
+			        if (++rowNum > 1) {
+				        Order order = new Order();
+				        while (cellIterator.hasNext()) {
+				        	i++;
+				        	Cell cell = cellIterator.next();
+				            try {
+	//			            	try {
+				            		if (i == 1) {
+				            			order.setOrderNumber(cell.getStringCellValue());
+				            		} else if (i == 2) {
+				            			order.setOrderStatus(cell.getStringCellValue());
+				            		} else if (i == 4) {
+				            			order.setResiNumber(cell.getStringCellValue());
+				            		} else if (i == 10) {
+					            		order.setPaymentDate(cell.getStringCellValue());
+				            		} else if (i == 18) {
+				            			order.setTotalProductPrice(cell.getStringCellValue());
+				            		}
+	//			            	} catch (IllegalStateException e) {
+	//			            		BigDecimal trackingCode = new BigDecimal(cell.getNumericCellValue());
+	//				            	if (trackingCode.compareTo(BigDecimal.ZERO) > 0) {
+	//				            		item.setTrackingCode(trackingCode.toPlainString());
+	//				            	}
+	//			            	}
+				            } catch (IllegalStateException e) {
+				            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
+				            }
+				        }
+				        orderList.add(order);
+			        }
+		        }
+			}
+		} finally {
+			workbook.close();
+		}
+		log.info("Order List Records size: {}", orderList.size());
+		return orderList;
+	}
+	
+	public List<Income> readIncomeFile(InputStream inputStream) throws IOException, ReportException {
+		List<Income> incomeList = new ArrayList<>();
+		Workbook workbook = WorkbookFactory.create(inputStream);
+		try {
+			Iterator<Sheet> sheetIterator = workbook.iterator();
+			int i = 0;
+			if (sheetIterator.hasNext()) {
+				Sheet sheet = sheetIterator.next();
+				Iterator<Row> rowIterator = sheet.iterator();
+				int rowNum = 0;
+			    while (rowIterator.hasNext()) {
+			    	Row row = rowIterator.next();
+			        Iterator<Cell> cellIterator = row.cellIterator();
+			        i = 0;
+			        if (++rowNum > 6) {
+				        Income income = new Income();
+				        while (cellIterator.hasNext()) {
+				        	i++;
+				        	Cell cell = cellIterator.next();
+				            try {
+	//			            	try {
+				            		if (i == 2) {
+				            			income.setOrderNumber(cell.getStringCellValue());
+				            		}
+	//			            	} catch (IllegalStateException e) {
+	//			            		BigDecimal trackingCode = new BigDecimal(cell.getNumericCellValue());
+	//				            	if (trackingCode.compareTo(BigDecimal.ZERO) > 0) {
+	//				            		item.setTrackingCode(trackingCode.toPlainString());
+	//				            	}
+	//			            	}
+				            } catch (IllegalStateException e) {
+				            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
+				            }
+				        }
+				        incomeList.add(income);
+			        }
+		        }
+			}
+		} finally {
+			workbook.close();
+		}
+		log.info("Income List Records size: {}", incomeList.size());
+		return incomeList;
+	}
+	
+	public List<Order> readLostOrdersFile(InputStream inputStream) throws IOException, ReportException {
+		List<Order> orderList = new ArrayList<>();
+		Workbook workbook = WorkbookFactory.create(inputStream);
+		try {
+			Iterator<Sheet> sheetIterator = workbook.iterator();
+			int i = 0;
+			if (sheetIterator.hasNext()) {
+				Sheet sheet = sheetIterator.next();
+				Iterator<Row> rowIterator = sheet.iterator();
+			    while (rowIterator.hasNext()) {
+			    	Row row = rowIterator.next();
+			        Iterator<Cell> cellIterator = row.cellIterator();
+			        i = 0;
+			        Order order = new Order();
+			        while (cellIterator.hasNext()) {
+			        	i++;
+			        	Cell cell = cellIterator.next();
+			            try {
+//			            	try {
+			            		if (i == 2) {
+			            			order.setOrderNumber(cell.getStringCellValue());
+			            		} else if (i == 3) {
+			            			order.setResiNumber(cell.getStringCellValue());
+			            		} else if (i == 4) {
+				            		order.setPaymentDate(cell.getStringCellValue());
+			            		} else if (i == 5) {
+			            			order.setTotalProductPrice(cell.getStringCellValue());
+			            		} else if (i == 6) {
+			            			order.setOrderStatus(cell.getStringCellValue());
+			            		}
+//			            	} catch (IllegalStateException e) {
+//			            		BigDecimal trackingCode = new BigDecimal(cell.getNumericCellValue());
+//				            	if (trackingCode.compareTo(BigDecimal.ZERO) > 0) {
+//				            		item.setTrackingCode(trackingCode.toPlainString());
+//				            	}
+//			            	}
+			            } catch (IllegalStateException e) {
+			            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
+			            }
+			        }
+			        orderList.add(order);
+		        }
+			}
+		} finally {
+			workbook.close();
+		}
+		log.info("Order List Records size: {}", orderList.size());
+		return orderList;
 	}
 }
