@@ -20,7 +20,7 @@ jobs:
           graalvm-version: 20.3.0
           native-image: true
       - name: Build with Maven
-        run: mvnw.cmd -Pnative package -DskipTests
+        run: mvn -Pnative package -DskipTests
         shell: powershell
       - name: Run UPX
         uses: crazy-max/ghaction-upx@v1.3.3
