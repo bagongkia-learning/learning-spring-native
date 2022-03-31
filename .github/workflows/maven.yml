@@ -26,7 +26,7 @@ jobs:
         uses: crazy-max/ghaction-upx@v1.3.3
         with:
           version: latest
-          file: target/demo-cli.exe
+          file: target/stev-report.exe
           args: '-7'
       - uses: actions/upload-artifact@v2
         with:
