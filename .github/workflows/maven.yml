@@ -20,11 +20,6 @@ jobs:
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v1
-
-      - name: 'Setup Java 11'
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
       
       - name: 'Download GraalVM'
         run: |
@@ -32,11 +27,15 @@ jobs:
           
       - name: 'Install GraalVM'
         run: |
-          Expand-Archive -path 'graal.zip' -destinationpath '.'
+          Expand-Archive -path 'graal.zip' -destinationpath 'C:\works'
+          
+      - name: 'Add environment variable'
+        run: |
+          $env:Path += ';C:\Works\graalvm-ce-java11-20.1.0\bin'
           
       - name: 'Install Native Image'
         run: |
-          graalvm-ce-java11-20.1.0\bin\gu.cmd install native-image
+          gu install native-image
           
       - name: 'Build Native Image'
         run: |
