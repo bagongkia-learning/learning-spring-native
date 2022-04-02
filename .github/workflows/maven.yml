@@ -36,20 +36,13 @@ jobs:
       - name: 'Set up Visual C Build Tools Workload for Visual Studio 2019 Build Tools'
         run: |
           choco install visualstudio2019-workload-vctools
-          
-      - name: 'Build Jar'
-        env:
-          JAVA_HOME: .\graalvm-ce-java11-21.3.0
-        run: |
-          mvn clean package -DskipTests
       
       - name: 'Build Native Image'
         shell: cmd
         env:
           JAVA_HOME: .\graalvm-ce-java11-21.3.0
         run: |
-          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
-          graalvm-ce-java11-21.3.0/bin/native-image --no-server --no-fallback -H:ReflectionConfigurationResources=reflection-config.json -H:IncludeResources=logback.xml -H:path=target -H:Name=stev-report -Djava.awt.headless=false -H:+AddAllCharsets --allow-incomplete-classpath -jar stev-report.jar
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Auxiliary\Build\vcvars64.bat" && mvn package -Pnative -DskipTests
           
       - name: 'List Target'
         run: |
