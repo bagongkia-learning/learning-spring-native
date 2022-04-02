@@ -27,24 +27,19 @@ jobs:
           
       - name: 'Install GraalVM'
         run: |
-          Expand-Archive -path 'graal.zip' -destinationpath 'C:\works'
-          
-      - name: 'Add environment variable'
-        run: |
-          $env:Path += ';C:\Works\graalvm-ce-java11-20.1.0\bin'
+          Expand-Archive -path 'graal.zip' -destinationpath '.'
           
       - name: 'Install Native Image'
         run: |
-          gu install native-image
-          
+          graalvm-ce-java11-20.1.0\bin\gu.cmd install native-image
+      
       - name: 'Build Native Image'
+        shell: cmd
+        env:
+          JAVA_HOME: ./graalvm-ce-java11-20.1.0
         run: |
-          ./mvnw.cmd -Pnative package -DskipTests 
+          ./mvnw.cmd -Pnative package -DskipTests
           
       - name: 'List Target'
         run: |
           ls target
-          
-      - name: 'Change mode'
-        run: |
-          chmod 755 target/stev-report.exe
