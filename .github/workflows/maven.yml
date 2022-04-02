@@ -31,12 +31,12 @@ jobs:
           
       - name: 'Install Native Image'
         run: |
-          graalvm-ce-java11-20.1.0\bin\gu.cmd install native-image
+          graalvm-ce-java11-21.3.0\bin\gu.cmd install native-image
       
       - name: 'Build Native Image'
         shell: cmd
         env:
-          JAVA_HOME: ./graalvm-ce-java11-20.1.0
+          JAVA_HOME: ./graalvm-ce-java11-21.3.0
         run: |
           ./mvnw.cmd -Pnative package -DskipTests
           
