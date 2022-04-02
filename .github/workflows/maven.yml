@@ -32,7 +32,20 @@ jobs:
       - name: 'Install Native Image'
         run: |
           graalvm-ce-java11-21.3.0\bin\gu.cmd install native-image
-          
-      - name: 'List GraalVM Bin'
+    
+                
+      - name: 'Set up Visual C Build Tools Workload for Visual Studio 2017 Build Tools'
         run: |
-          ls .\graalvm-ce-java11-21.3.0\bin
+          choco install visualstudio2017-workload-vctools
+      
+      - name: 'Build Native Image'
+        shell: cmd
+        env:
+          JAVA_HOME: .\graalvm-ce-java11-21.3.0
+        run: |
+          call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+          mvn -Pnative package -DskipTests
+          
+      - name: 'List Target'
+        run: |
+          ls target
