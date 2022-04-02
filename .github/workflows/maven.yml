@@ -1,39 +1,17 @@
-
-name: stev-report
-on:
-  push:
-    tags:
-      - "v*"
-    branches:
-      - 'main'
-
 jobs:
-  buildOnWindows:
-    runs-on: windows-latest
-
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
     steps:
-      - uses: actions/checkout@v2
-      - uses: ilammy/msvc-dev-cmd@v1.5.0
-      - uses: microsoft/setup-msbuild@v1
-      - uses: ayltai/setup-graalvm@v1
-        with:
-          java-version: 11
-          graalvm-version: 20.3.0
-          native-image: true
-      - name: Build with Maven
-        run: mvn -Pnative package -DskipTests
-        shell: powershell
-      - name: 'List Target'
-        run: |
-          ls target
-      - name: Run UPX
-        uses: crazy-max/ghaction-upx@v1.3.3
-        with:
-          version: latest
-          file: target/stev-report-0.0.1-SNAPSHOT.exe
-          args: '-7'
-      - uses: actions/upload-artifact@v2
-        with:
-          if-no-files-found: warn
-          name: package
-          path: target/*.exe
+      steps:
+        - name: Check out repository
+          uses: actions/checkout@v2
+        - name: Set up GraalVM Native Image toolchain
+          uses: helpermethod/graalvm-native-image-toolchain@0.0.2
+          with:
+            graalvm-version: 21.2.0
+            java-version: 11
+        - name: Build
+          run: ./mvnw -Pnative package -DskipTests
