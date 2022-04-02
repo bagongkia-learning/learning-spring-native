@@ -5,36 +5,47 @@ on:
       - "v*"
     branches:
       - 'main'
-      
+
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  build-windows-image:
+    name: 'Build Windows Image'
     strategy:
       matrix:
-        os: [windows-latest]
+        os: ['windows-latest']
+        include:
+          - os: 'windows-latest'
+            label: 'windows'
+    runs-on: ${{matrix.os}}
+
     steps:
-      - uses: actions/checkout@v2
-      - uses: ilammy/msvc-dev-cmd@v1.5.0
-      - uses: microsoft/setup-msbuild@v1
-      - uses: ayltai/setup-graalvm@v1
+      - name: 'Checkout'
+        uses: actions/checkout@v1
+
+      - name: 'Setup Java 11'
+        uses: actions/setup-java@v1
         with:
           java-version: 11
-          graalvm-version: 20.3.0
-          native-image: true
-      - name: 'Install Native Image Plugin'
+      
+      - name: 'Download GraalVM'
         run: |
-          gu install native-image
-      - name: Build with Maven
-        run: mvn -DskipTests -B clean package native-image:native-image --file pom.xml
-        shell: powershell
-      - name: Run UPX
-        uses: crazy-max/ghaction-upx@v1.3.3
-        with:
-          version: latest
-          file: target/stev-report-0.0.1-SNAPSHOT.exe
-          args: '-7'
-      - uses: actions/upload-artifact@v2
-        with:
-          if-no-files-found: warn
-          name: package
-          path: target/*.exe
+          Invoke-RestMethod -Uri https://github.com/graalvm/graalvm-ce-builds/releases/download/vm-20.1.0/graalvm-ce-java11-windows-amd64-20.1.0.zip -OutFile 'graal.zip'
+          
+      - name: 'Install GraalVM'
+        run: |
+          Expand-Archive -path 'graal.zip' -destinationpath '.'
+          
+      - name: 'Install Native Image'
+        run: |
+          graalvm-ce-java11-20.1.0\bin\gu.cmd install native-image
+          
+      - name: 'Build Native Image'
+        run: |
+          ./mvnw.cmd -Pnative package -DskipTests 
+          
+      - name: 'List Target'
+        run: |
+          ls target
+          
+      - name: 'Change mode'
+        run: |
+          chmod 755 target/stev-report.exe
