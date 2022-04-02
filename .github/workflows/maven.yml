@@ -42,7 +42,7 @@ jobs:
         env:
           JAVA_HOME: ./graalvm-ce-java11-21.3.0
         run: |
-          ./mvnw.cmd -Pnative package -DskipTests
+          mvn -Pnative package -DskipTests
           
       - name: 'List Target'
         run: |
