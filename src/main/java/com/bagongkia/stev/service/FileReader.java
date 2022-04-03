@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.ss.usermodel.Cell;
@@ -300,6 +302,15 @@ public class FileReader {
 	//			            	try {
 				            		if (i == 2) {
 				            			income.setOrderNumber(cell.getStringCellValue());
+				            		} else if (i == 22) {
+				            			Pattern p1 = Pattern.compile("[\\d]+");
+				            			Matcher m1 = p1.matcher(cell.getStringCellValue());
+				            			
+				            			if (m1.find()) {
+				            				income.setAmount(new BigDecimal(m1.group()));
+				            			} else {
+				            				income.setAmount(BigDecimal.ZERO);
+				            			}
 				            		}
 	//			            	} catch (IllegalStateException e) {
 	//			            		BigDecimal trackingCode = new BigDecimal(cell.getNumericCellValue());
@@ -331,38 +342,41 @@ public class FileReader {
 			if (sheetIterator.hasNext()) {
 				Sheet sheet = sheetIterator.next();
 				Iterator<Row> rowIterator = sheet.iterator();
+				int rowNum = 0;
 			    while (rowIterator.hasNext()) {
 			    	Row row = rowIterator.next();
-			        Iterator<Cell> cellIterator = row.cellIterator();
-			        i = 0;
-			        Order order = new Order();
-			        while (cellIterator.hasNext()) {
-			        	i++;
-			        	Cell cell = cellIterator.next();
-			            try {
-//			            	try {
-			            		if (i == 2) {
-			            			order.setOrderNumber(cell.getStringCellValue());
-			            		} else if (i == 3) {
-			            			order.setResiNumber(cell.getStringCellValue());
-			            		} else if (i == 4) {
-				            		order.setPaymentDate(cell.getStringCellValue());
-			            		} else if (i == 5) {
-			            			order.setTotalProductPrice(cell.getStringCellValue());
-			            		} else if (i == 6) {
-			            			order.setOrderStatus(cell.getStringCellValue());
-			            		}
-//			            	} catch (IllegalStateException e) {
-//			            		BigDecimal trackingCode = new BigDecimal(cell.getNumericCellValue());
-//				            	if (trackingCode.compareTo(BigDecimal.ZERO) > 0) {
-//				            		item.setTrackingCode(trackingCode.toPlainString());
-//				            	}
-//			            	}
-			            } catch (IllegalStateException e) {
-			            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
-			            }
-			        }
-			        orderList.add(order);
+			    	if (++rowNum > 1) {
+				        Iterator<Cell> cellIterator = row.cellIterator();
+				        i = 0;
+				        Order order = new Order();
+				        while (cellIterator.hasNext()) {
+				        	i++;
+				        	Cell cell = cellIterator.next();
+				            try {
+	//			            	try {
+				            		if (i == 2) {
+				            			order.setOrderNumber(cell.getStringCellValue());
+				            		} else if (i == 3) {
+				            			order.setResiNumber(cell.getStringCellValue());
+				            		} else if (i == 4) {
+					            		order.setPaymentDate(cell.getStringCellValue());
+				            		} else if (i == 5) {
+				            			order.setTotalIncome(new BigDecimal(cell.getNumericCellValue()));
+				            		} else if (i == 6) {
+				            			order.setOrderStatus(cell.getStringCellValue());
+				            		}
+	//			            	} catch (IllegalStateException e) {
+	//			            		BigDecimal trackingCode = new BigDecimal(cell.getNumericCellValue());
+	//				            	if (trackingCode.compareTo(BigDecimal.ZERO) > 0) {
+	//				            		item.setTrackingCode(trackingCode.toPlainString());
+	//				            	}
+	//			            	}
+				            } catch (IllegalStateException e) {
+				            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
+				            }
+				        }
+				        orderList.add(order);
+			    	}
 		        }
 			}
 		} finally {

@@ -38,53 +38,69 @@ public class LostOrdersFileWriter {
 	public void write(List<Order> lostOrders, List<Order> orders, List<Income> incomes, List<ReturnedItem> returnedItems) throws IOException {
 		Map<String, Order> lostOrdersMap = new LinkedHashMap<>();
 		lostOrders.stream()
-			.filter(item -> !isOrderNumberExistsInIncomes(incomes, item.getOrderNumber()))
-			.filter(item -> !isTrackingCodeExistsInReturnedItems(returnedItems, item.getResiNumber()))
-			.forEach(item -> {
-				Order order = new Order();
-				order.setOrderNumber(item.getOrderNumber());
-				order.setResiNumber(item.getResiNumber());
-				order.setPaymentDate(item.getPaymentDate());
-				order.setTotalProductPrice(item.getTotalProductPrice());
-				order.setOrderStatus(item.getOrderStatus());
+			.map(order -> {
+				if (order.getTotalIncome() == null && BigDecimal.ZERO.compareTo(order.getTotalIncome()) == 0) {
+					BigDecimal totalIncome = getTotalIncome(incomes, order.getOrderNumber());
+					order.setTotalIncome(totalIncome == null ? BigDecimal.ZERO : totalIncome);
+				}
+				return order;
+			})
+			.filter(order -> order.getOrderNumber() != null)
+			.filter(order -> !isTrackingCodeExistsInReturnedItems(returnedItems, order.getResiNumber()))
+			.forEach(order -> {
+//				Price price = extractPrice(order.getTotalProductPrice());
+//				String key = order.getOrderNumber() + ";" + price.getCurrency();
+				String key = order.getOrderNumber();
+//				if (lostOrdersMap.containsKey(key)) {
+//					BigDecimal sumPrice =  order.getIncome() == null ? BigDecimal.ZERO : price.getAmount();
+					
+//					BigDecimal currentTotalIncome = lostOrdersMap.get(key).getTotalIncome();
+//					order.setCurrency(price.getCurrency());
+//					order.setTotalIncome(currentTotalIncome.add(order.getIncome()));
+//					lostOrdersMap.put(key, order);
+//				} else {
+//					order.setTotalIncome(order.getTotalIncome());
+//					lostOrdersMap.put(key, order);
+//				}
 				
-				Price price = extractPrice(order.getTotalProductPrice());
-				String key = order.getOrderNumber() + ";" + price.getCurrency();
-				if (lostOrdersMap.containsKey(key)) {
-					BigDecimal sumPrice =  price.getAmount() == null ? BigDecimal.ZERO : price.getAmount();
-					BigDecimal currentPrice = lostOrdersMap.get(key).getSumProductPrice();
-					order.setCurrency(price.getCurrency());
-					order.setSumProductPrice(currentPrice.add(sumPrice));
-					lostOrdersMap.put(key, order);
-				} else {
-					order.setCurrency(price.getCurrency());
-					order.setSumProductPrice(price.getAmount());
+				if (!lostOrdersMap.containsKey(key)) {
 					lostOrdersMap.put(key, order);
 				}
 			});
 		
 		orders.stream()
-			.filter(item -> !isOrderNumberExistsInIncomes(incomes, item.getOrderNumber()))
-			.filter(item -> !isTrackingCodeExistsInReturnedItems(returnedItems, item.getResiNumber()))
-			.forEach(item -> {
+			.map(item -> {
 				Order order = new Order();
-				order.setOrderNumber(item.getOrderNumber());
-				order.setResiNumber(item.getResiNumber());
-				order.setPaymentDate(item.getPaymentDate());
-				order.setTotalProductPrice(item.getTotalProductPrice());
-				order.setOrderStatus(item.getOrderStatus());
-				
-				Price price = extractPrice(order.getTotalProductPrice());
-				String key = order.getOrderNumber() + ";" + price.getCurrency();
-				if (lostOrdersMap.containsKey(key)) {
-					BigDecimal sumPrice =  price.getAmount() == null ? BigDecimal.ZERO : price.getAmount();
-					BigDecimal currentPrice = lostOrdersMap.get(key).getSumProductPrice();
-					order.setCurrency(price.getCurrency());
-					order.setSumProductPrice(currentPrice.add(sumPrice));
-					lostOrdersMap.put(key, order);
-				} else {
-					order.setCurrency(price.getCurrency());
-					order.setSumProductPrice(price.getAmount());
+				if (item.getResiNumber() != null && !item.getResiNumber().isBlank()) {
+					order.setOrderNumber(item.getOrderNumber());
+					order.setResiNumber(item.getResiNumber());
+					order.setPaymentDate(item.getPaymentDate());
+					order.setTotalProductPrice(item.getTotalProductPrice());
+					order.setOrderStatus(item.getOrderStatus());
+					
+					BigDecimal totalIncome = getTotalIncome(incomes, item.getOrderNumber());
+					order.setTotalIncome(totalIncome == null ? BigDecimal.ZERO : totalIncome);
+				}
+				return order;
+			})
+			.filter(order -> order.getOrderNumber() != null)
+			.filter(order -> !isTrackingCodeExistsInReturnedItems(returnedItems, order.getResiNumber()))
+			.forEach(order -> {
+	//			Price price = extractPrice(order.getTotalProductPrice());
+	//			String key = order.getOrderNumber() + ";" + price.getCurrency();
+				String key = order.getOrderNumber();
+//				if (lostOrdersMap.containsKey(key)) {
+	//				BigDecimal sumPrice =  order.getIncome() == null ? BigDecimal.ZERO : price.getAmount();
+					
+//					BigDecimal currentTotalIncome = lostOrdersMap.get(key).getTotalIncome();
+	//				order.setCurrency(price.getCurrency());
+//					order.setTotalIncome(currentTotalIncome.add(order.getTotalIncome()));
+//					lostOrdersMap.put(key, order);
+//				} else {
+//					order.setTotalIncome(order.getTotalIncome());
+//					lostOrdersMap.put(key, order);
+//				}
+				if (!lostOrdersMap.containsKey(key)) {
 					lostOrdersMap.put(key, order);
 				}
 			});
@@ -142,7 +158,7 @@ public class LostOrdersFileWriter {
 			cell1.setCellValue(order.getOrderNumber());
 			cell2.setCellValue(order.getResiNumber());
 			cell3.setCellValue(order.getPaymentDate());
-			cell4.setCellValue(order.getCurrency() + df.format(order.getSumProductPrice().longValue()));
+			cell4.setCellValue(order.getTotalIncome().longValue());
 			cell5.setCellValue(order.getOrderStatus());
 			i++;
 		}
@@ -212,6 +228,11 @@ public class LostOrdersFileWriter {
 			}
 			return exist;
 		});
+	}
+	
+	private BigDecimal getTotalIncome(List<Income> incomes, String orderNumber) {
+		return incomes.stream().filter(item -> item != null && item.getOrderNumber() != null && orderNumber.trim().equalsIgnoreCase(item.getOrderNumber().trim()))
+				.map(Income::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
 	}
 	
 	private Boolean isTrackingCodeExistsInReturnedItems(List<ReturnedItem> returnedItems, String trackingCode) {
