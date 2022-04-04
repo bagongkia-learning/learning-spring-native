@@ -80,7 +80,7 @@ jobs:
         with:
           upload_url: ${{steps.create_release.outputs.upload_url}}
           asset_path: target/stev-report
-          asset_name: stev-report-${{matrix.label}}
+          asset_name: stev-report-${{matrix.label}}-v2
           asset_content_type: application/octet-stream
 
       - name: 'Write Upload URL To File'
