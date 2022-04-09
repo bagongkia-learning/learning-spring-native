@@ -45,7 +45,7 @@ public class LostOrdersFileWriter {
 				}
 				return order;
 			})
-			.filter(order -> order.getOrderNumber() != null)
+			.filter(order -> !isOrderNumberExistsInIncomes(incomes, order.getOrderNumber()))
 			.filter(order -> !isTrackingCodeExistsInReturnedItems(returnedItems, order.getResiNumber()))
 			.forEach(order -> {
 //				Price price = extractPrice(order.getTotalProductPrice());
@@ -84,6 +84,7 @@ public class LostOrdersFileWriter {
 				return order;
 			})
 			.filter(order -> order.getOrderNumber() != null)
+			.filter(order -> !isOrderNumberExistsInIncomes(incomes, order.getOrderNumber()))
 			.filter(order -> !isTrackingCodeExistsInReturnedItems(returnedItems, order.getResiNumber()))
 			.forEach(order -> {
 	//			Price price = extractPrice(order.getTotalProductPrice());
@@ -132,7 +133,7 @@ public class LostOrdersFileWriter {
 //		cell2s.setCellStyle(headerCellStyle);
 		cell3s.setCellValue("Waktu Pembayaran Dilakukan");
 //		cell3s.setCellStyle(headerCellStyle);
-		cell4s.setCellValue("Total Harga Produk");
+		cell4s.setCellValue("Total Penjualan");
 //		cell4s.setCellStyle(headerCellStyle);
 		cell5s.setCellValue("Status Pesanan");
 //		cell5s.setCellStyle(headerCellStyle);
