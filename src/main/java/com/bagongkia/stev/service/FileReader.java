@@ -361,7 +361,7 @@ public class FileReader {
 				            		} else if (i == 4) {
 					            		order.setPaymentDate(cell.getStringCellValue());
 				            		} else if (i == 5) {
-				            			order.setTotalIncome(new BigDecimal(cell.getNumericCellValue()));
+				            			order.setTotalProductPrice(cell.getStringCellValue());
 				            		} else if (i == 6) {
 				            			order.setOrderStatus(cell.getStringCellValue());
 				            		}

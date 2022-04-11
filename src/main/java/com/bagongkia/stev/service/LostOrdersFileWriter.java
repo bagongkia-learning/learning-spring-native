@@ -9,9 +9,11 @@ import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,38 +39,39 @@ public class LostOrdersFileWriter {
 
 	public void write(List<Order> lostOrders, List<Order> orders, List<Income> incomes, List<ReturnedItem> returnedItems) throws IOException {
 		Map<String, Order> lostOrdersMap = new LinkedHashMap<>();
+		Set<String> lostOrdersSet = new HashSet<>();
 		lostOrders.stream()
-			.map(order -> {
-				if (order.getTotalIncome() == null && BigDecimal.ZERO.compareTo(order.getTotalIncome()) == 0) {
-					BigDecimal totalIncome = getTotalIncome(incomes, order.getOrderNumber());
-					order.setTotalIncome(totalIncome == null ? BigDecimal.ZERO : totalIncome);
-				}
-				return order;
-			})
+//			.map(order -> {
+//				if (order.getTotalIncome() == null && BigDecimal.ZERO.compareTo(order.getTotalIncome()) == 0) {
+//					BigDecimal totalIncome = getTotalIncome(incomes, order.getOrderNumber());
+//					order.setTotalIncome(totalIncome == null ? BigDecimal.ZERO : totalIncome);
+//				}
+//				return order;
+//			})
 			.filter(order -> !isOrderNumberExistsInIncomes(incomes, order.getOrderNumber()))
 			.filter(order -> !isTrackingCodeExistsInReturnedItems(returnedItems, order.getResiNumber()))
 			.forEach(order -> {
-//				Price price = extractPrice(order.getTotalProductPrice());
-//				String key = order.getOrderNumber() + ";" + price.getCurrency();
-				String key = order.getOrderNumber();
-//				if (lostOrdersMap.containsKey(key)) {
-//					BigDecimal sumPrice =  order.getIncome() == null ? BigDecimal.ZERO : price.getAmount();
-					
-//					BigDecimal currentTotalIncome = lostOrdersMap.get(key).getTotalIncome();
-//					order.setCurrency(price.getCurrency());
-//					order.setTotalIncome(currentTotalIncome.add(order.getIncome()));
-//					lostOrdersMap.put(key, order);
-//				} else {
-//					order.setTotalIncome(order.getTotalIncome());
-//					lostOrdersMap.put(key, order);
-//				}
-				
-				if (!lostOrdersMap.containsKey(key)) {
+				lostOrdersSet.add(order.getOrderNumber());
+				Price price = extractPrice(order.getTotalProductPrice());
+				String key = order.getOrderNumber() + ";" + price.getCurrency();
+//				String key = order.getOrderNumber();
+				BigDecimal productPrice =  order.getTotalProductPrice() == null ? BigDecimal.ZERO : price.getAmount();
+				order.setCurrency(price.getCurrency());
+				if (lostOrdersMap.containsKey(key)) {
+					BigDecimal currentSumOfProductPrice = lostOrdersMap.get(key).getSumOfProductPrice();
+					order.setSumOfProductPrice(currentSumOfProductPrice.add(productPrice));
+					lostOrdersMap.put(key, order);
+				} else {
+					order.setSumOfProductPrice(productPrice);
 					lostOrdersMap.put(key, order);
 				}
+//				if (!lostOrdersMap.containsKey(key)) {
+//					lostOrdersMap.put(key, order);
+//				}
 			});
 		
 		orders.stream()
+			.filter(item -> !lostOrdersSet.contains(item.getOrderNumber()))
 			.map(item -> {
 				Order order = new Order();
 				if (item.getResiNumber() != null && !item.getResiNumber().isBlank()) {
@@ -87,23 +90,22 @@ public class LostOrdersFileWriter {
 			.filter(order -> !isOrderNumberExistsInIncomes(incomes, order.getOrderNumber()))
 			.filter(order -> !isTrackingCodeExistsInReturnedItems(returnedItems, order.getResiNumber()))
 			.forEach(order -> {
-	//			Price price = extractPrice(order.getTotalProductPrice());
-	//			String key = order.getOrderNumber() + ";" + price.getCurrency();
-				String key = order.getOrderNumber();
-//				if (lostOrdersMap.containsKey(key)) {
-	//				BigDecimal sumPrice =  order.getIncome() == null ? BigDecimal.ZERO : price.getAmount();
-					
-//					BigDecimal currentTotalIncome = lostOrdersMap.get(key).getTotalIncome();
-	//				order.setCurrency(price.getCurrency());
-//					order.setTotalIncome(currentTotalIncome.add(order.getTotalIncome()));
-//					lostOrdersMap.put(key, order);
-//				} else {
-//					order.setTotalIncome(order.getTotalIncome());
-//					lostOrdersMap.put(key, order);
-//				}
-				if (!lostOrdersMap.containsKey(key)) {
+				Price price = extractPrice(order.getTotalProductPrice());
+				String key = order.getOrderNumber() + ";" + price.getCurrency();
+//				String key = order.getOrderNumber();
+				BigDecimal productPrice =  order.getTotalProductPrice() == null ? BigDecimal.ZERO : price.getAmount();
+				order.setCurrency(price.getCurrency());
+				if (lostOrdersMap.containsKey(key)) {
+					BigDecimal currentSumOfProductPrice = lostOrdersMap.get(key).getSumOfProductPrice();
+					order.setSumOfProductPrice(currentSumOfProductPrice.add(productPrice));
+					lostOrdersMap.put(key, order);
+				} else {
+					order.setSumOfProductPrice(productPrice);
 					lostOrdersMap.put(key, order);
 				}
+//				if (!lostOrdersMap.containsKey(key)) {
+//					lostOrdersMap.put(key, order);
+//				}
 			});
 	
 		Workbook workbook = new XSSFWorkbook();
@@ -133,7 +135,7 @@ public class LostOrdersFileWriter {
 //		cell2s.setCellStyle(headerCellStyle);
 		cell3s.setCellValue("Waktu Pembayaran Dilakukan");
 //		cell3s.setCellStyle(headerCellStyle);
-		cell4s.setCellValue("Total Penjualan");
+		cell4s.setCellValue("Total Harga Produk");
 //		cell4s.setCellStyle(headerCellStyle);
 		cell5s.setCellValue("Status Pesanan");
 //		cell5s.setCellStyle(headerCellStyle);
@@ -159,7 +161,7 @@ public class LostOrdersFileWriter {
 			cell1.setCellValue(order.getOrderNumber());
 			cell2.setCellValue(order.getResiNumber());
 			cell3.setCellValue(order.getPaymentDate());
-			cell4.setCellValue(order.getTotalIncome().longValue());
+			cell4.setCellValue(order.getCurrency() + " " + order.getSumOfProductPrice().longValue());
 			cell5.setCellValue(order.getOrderStatus());
 			i++;
 		}

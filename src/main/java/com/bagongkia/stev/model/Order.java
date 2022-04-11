@@ -20,5 +20,6 @@ public class Order {
 	
 	private String currency;
 	private BigDecimal totalIncome;
+	private BigDecimal sumOfProductPrice;
 	
 }
