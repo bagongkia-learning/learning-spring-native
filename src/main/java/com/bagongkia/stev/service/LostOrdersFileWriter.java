@@ -18,8 +18,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.poi.ss.usermodel.Cell;
-//import org.apache.poi.ss.usermodel.CellStyle;
-//import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -74,7 +74,7 @@ public class LostOrdersFileWriter {
 			.filter(item -> !lostOrdersSet.contains(item.getOrderNumber()))
 			.map(item -> {
 				Order order = new Order();
-				if (item.getResiNumber() != null && !item.getResiNumber().isBlank()) {
+				if (item.getResiNumber() != null && !item.getResiNumber().isEmpty()) {
 					order.setOrderNumber(item.getOrderNumber());
 					order.setResiNumber(item.getResiNumber());
 					order.setPaymentDate(item.getPaymentDate());
@@ -111,11 +111,11 @@ public class LostOrdersFileWriter {
 		Workbook workbook = new XSSFWorkbook();
 		Sheet sheet = workbook.createSheet("Sheet 1");
 		
-//		Font headerFont = workbook.createFont();
-//	    headerFont.setBold(true);
-//	    
-//	    CellStyle headerCellStyle = workbook.createCellStyle();
-//	    headerCellStyle.setFont(headerFont);
+		Font headerFont = workbook.createFont();
+	    headerFont.setBold(true);
+	    
+	    CellStyle headerCellStyle = workbook.createCellStyle();
+	    headerCellStyle.setFont(headerFont);
 	    
 		Integer i = 0;
 		
@@ -128,16 +128,16 @@ public class LostOrdersFileWriter {
 		Cell cell5s = row1.createCell(5);
 		
 		cell0s.setCellValue("No.");
-//		cell0s.setCellStyle(headerCellStyle);
+		cell0s.setCellStyle(headerCellStyle);
 		cell1s.setCellValue("Nomor Pesanan");
-//		cell1s.setCellStyle(headerCellStyle);
+		cell1s.setCellStyle(headerCellStyle);
 		cell2s.setCellValue("Nomor Resi");
-//		cell2s.setCellStyle(headerCellStyle);
+		cell2s.setCellStyle(headerCellStyle);
 		cell3s.setCellValue("Waktu Pembayaran Dilakukan");
-//		cell3s.setCellStyle(headerCellStyle);
+		cell3s.setCellStyle(headerCellStyle);
 		cell4s.setCellValue("Total Harga Produk");
-//		cell4s.setCellStyle(headerCellStyle);
-		cell5s.setCellValue("Status Pesanan");
+		cell4s.setCellStyle(headerCellStyle);
+//		cell5s.setCellValue("Status Pesanan");
 //		cell5s.setCellStyle(headerCellStyle);
 		i++;
 		
@@ -155,21 +155,23 @@ public class LostOrdersFileWriter {
 			Cell cell2 = row.createCell(2);
 			Cell cell3 = row.createCell(3);
 			Cell cell4 = row.createCell(4);
-			Cell cell5 = row.createCell(5);
+//			Cell cell5 = row.createCell(5);
 			
 			cell0.setCellValue(i);
 			cell1.setCellValue(order.getOrderNumber());
 			cell2.setCellValue(order.getResiNumber());
 			cell3.setCellValue(order.getPaymentDate());
 			cell4.setCellValue(order.getCurrency() + " " + order.getSumOfProductPrice().longValue());
-			cell5.setCellValue(order.getOrderStatus());
+//			cell5.setCellValue(order.getOrderStatus());
 			i++;
 		}
 		
-//		sheet.autoSizeColumn(0);
-//		sheet.autoSizeColumn(1);
-//		sheet.autoSizeColumn(2);
-//		sheet.autoSizeColumn(3);
+		sheet.autoSizeColumn(0);
+		sheet.autoSizeColumn(1);
+		sheet.autoSizeColumn(2);
+		sheet.autoSizeColumn(3);
+		sheet.autoSizeColumn(4);
+//		sheet.autoSizeColumn(5);
 		
 		Path path = Paths.get("download").toAbsolutePath().normalize();
 		Files.createDirectories(path);

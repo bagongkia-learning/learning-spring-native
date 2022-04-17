@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Cell;
-//import org.apache.poi.ss.usermodel.CellStyle;
-//import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -46,11 +46,11 @@ public class InvoiceWriter {
 		Workbook workbook = new XSSFWorkbook();
 		Sheet sheet = workbook.createSheet("Sheet 1");
 		
-//		Font headerFont = workbook.createFont();
-//	    headerFont.setBold(true);
-//	    
-//	    CellStyle headerCellStyle = workbook.createCellStyle();
-//	    headerCellStyle.setFont(headerFont);
+		Font headerFont = workbook.createFont();
+	    headerFont.setBold(true);
+	    
+	    CellStyle headerCellStyle = workbook.createCellStyle();
+	    headerCellStyle.setFont(headerFont);
 	    
 	    Integer i = 0;
 		
@@ -61,13 +61,13 @@ public class InvoiceWriter {
 		Cell cell3s = row1.createCell(3);
 		
 		cell0s.setCellValue("No.");
-//		cell0s.setCellStyle(headerCellStyle);
+		cell0s.setCellStyle(headerCellStyle);
 		cell1s.setCellValue("Order Number");
-//		cell1s.setCellStyle(headerCellStyle);
+		cell1s.setCellStyle(headerCellStyle);
 		cell2s.setCellValue("Shipping Name");
-//		cell2s.setCellStyle(headerCellStyle);
+		cell2s.setCellStyle(headerCellStyle);
 		cell3s.setCellValue("Tracking Code");
-//		cell3s.setCellStyle(headerCellStyle);
+		cell3s.setCellStyle(headerCellStyle);
 		i++;
 		
 		for (Map.Entry<String, Invoice> entry : unprintedInvoiceMap.entrySet()) {
@@ -84,10 +84,10 @@ public class InvoiceWriter {
 			i++;
 		}
 		
-//		sheet.autoSizeColumn(0);
-//		sheet.autoSizeColumn(1);
-//		sheet.autoSizeColumn(2);
-//		sheet.autoSizeColumn(3);
+		sheet.autoSizeColumn(0);
+		sheet.autoSizeColumn(1);
+		sheet.autoSizeColumn(2);
+		sheet.autoSizeColumn(3);
 		
 		Path path = Paths.get("download").toAbsolutePath().normalize();
 		Files.createDirectories(path);
