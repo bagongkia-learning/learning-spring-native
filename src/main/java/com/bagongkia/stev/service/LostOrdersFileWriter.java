@@ -161,7 +161,7 @@ public class LostOrdersFileWriter {
 			cell1.setCellValue(order.getOrderNumber());
 			cell2.setCellValue(order.getResiNumber());
 			cell3.setCellValue(order.getPaymentDate());
-			cell4.setCellValue(order.getCurrency() + " " + order.getSumOfProductPrice().longValue());
+			cell4.setCellValue(order.getSumOfProductPrice().longValue());
 //			cell5.setCellValue(order.getOrderStatus());
 			i++;
 		}
