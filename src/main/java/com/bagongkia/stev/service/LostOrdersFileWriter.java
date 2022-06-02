@@ -125,7 +125,7 @@ public class LostOrdersFileWriter {
 		Cell cell2s = row1.createCell(2);
 		Cell cell3s = row1.createCell(3);
 		Cell cell4s = row1.createCell(4);
-		Cell cell5s = row1.createCell(5);
+//		Cell cell5s = row1.createCell(5);
 		
 		cell0s.setCellValue("No.");
 		cell0s.setCellStyle(headerCellStyle);
@@ -161,7 +161,7 @@ public class LostOrdersFileWriter {
 			cell1.setCellValue(order.getOrderNumber());
 			cell2.setCellValue(order.getResiNumber());
 			cell3.setCellValue(order.getPaymentDate());
-			cell4.setCellValue(order.getCurrency() + " " + order.getSumOfProductPrice().longValue());
+			cell4.setCellValue(order.getSumOfProductPrice().longValue());
 //			cell5.setCellValue(order.getOrderStatus());
 			i++;
 		}
