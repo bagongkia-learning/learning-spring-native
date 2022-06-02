@@ -30,7 +30,6 @@ import com.opencsv.CSVParser;
 import com.opencsv.CSVParserBuilder;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVReaderBuilder;
-import com.opencsv.exceptions.CsvValidationException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,24 +37,24 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class FileReader {
 
-	public List<Payment> readPaymentFile(InputStream inputStream) throws IOException {
+	public List<Payment> readPaymentFile(InputStream inputStream) throws ReportException, IOException {
 		List<Payment> payments = new ArrayList<>();
 		InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-		Boolean first = true;
+		int row = 0;
 		try (CSVReader br = new CSVReader(inputStreamReader)) {
 			try {
 				String[] line;
 				while ((line = br.readNext()) != null) {
-					if (first) {
-						first = false;
+					row++;
+					if (row == 1) {
 						continue; 
 					}
 					Payment payment = new Payment();
 					payment.setOrderNumber(line[13]);
 					payments.add(payment);
 				}
-			} catch (CsvValidationException e) {
-				throw new IOException(e);
+			} catch (Exception e) {
+				throw new ReportException("PLEASE RECHECK ROW " + row, e);
 			} finally {
 				br.close();
 			}
@@ -66,33 +65,33 @@ public class FileReader {
 		return payments;
 	}
 	
-	public List<Sale> readSalesFile(InputStream inputStream) throws IOException {
+	public List<Sale> readSalesFile(InputStream inputStream) throws ReportException, IOException {
 		List<Sale> sales = new ArrayList<>();
 		InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-		Boolean first = true;
+		int row = 0;
 		CSVParser parser = new CSVParserBuilder().withSeparator(';').build();
 		try (CSVReader br = new CSVReaderBuilder(inputStreamReader).withCSVParser(parser).build()) {
 			String[] line;
 			try {
 				while ((line = br.readNext()) != null) {
-					if (first) {
-						first = false;
+					row++;
+					if (row == 1) {
 						continue; 
 					}
 					
 					Sale sale = new Sale();
-					sale.setOrderNumber(line[8]);
-					sale.setShippingName(line[13]);
+					sale.setOrderNumber(line[9]);
+					sale.setShippingName(line[14]);
 					
 					if (line[37] != null) {
-						sale.setPaidAmount(new BigDecimal(line[37]));
+						sale.setPaidAmount(new BigDecimal(line[38]));
 					}
-					sale.setTrackingCode(line[48]);
+					sale.setTrackingCode(line[49]);
 					sales.add(sale);
 				}
 				log.info("Sales Records size: {}", sales.size());
-			} catch(CsvValidationException e) {
-				throw new IOException(e);
+			} catch(Exception e) {
+				throw new ReportException("PLEASE RECHECK ROW " + row, e);
 			} finally {
 				br.close();
 			}
@@ -100,7 +99,7 @@ public class FileReader {
 			inputStreamReader.close();
 		}
 		return sales;
-	}
+	}	
 
 	public List<ReturnedItem> readReturnedItemsFile(InputStream inputStream) throws EncryptedDocumentException, IOException, ReportException {
 		List<ReturnedItem> returnedItems = new ArrayList<>();
@@ -361,7 +360,11 @@ public class FileReader {
 				            		} else if (i == 4) {
 					            		order.setPaymentDate(cell.getStringCellValue());
 				            		} else if (i == 5) {
-				            			order.setTotalProductPrice(cell.getStringCellValue());
+				            			try {
+				            				order.setTotalProductPrice(cell.getStringCellValue());
+				            			} catch (IllegalStateException e) {
+							            	order.setTotalProductPrice(String.valueOf(cell.getNumericCellValue()));
+						            	}
 				            		} else if (i == 6) {
 				            			order.setOrderStatus(cell.getStringCellValue());
 				            		}
