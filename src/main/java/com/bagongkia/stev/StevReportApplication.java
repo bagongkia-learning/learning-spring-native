@@ -8,7 +8,7 @@ import org.springframework.context.annotation.PropertySources;
 
 @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 @PropertySources(value = {
-		@PropertySource(value = "file:report.properties"),
+		@PropertySource(value = "file:report.properties", ignoreResourceNotFound = true),
 		@PropertySource(value = "classpath:application.properties"),
 })
 public class StevReportApplication {
