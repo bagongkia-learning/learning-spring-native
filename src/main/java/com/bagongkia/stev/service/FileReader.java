@@ -16,6 +16,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.bagongkia.stev.ReportException;
@@ -36,12 +37,67 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Service
 public class FileReader {
+	
+	@Value("${laporan.uang-masuk.order-no}")
+	private String paymentOrderNoColumn;
+	
+	@Value("${laporan.uang-masuk.delimiter}")
+	private String paymentDelimiter;
+	
+	@Value("${laporan.penjualan.order-no}")
+	private String salesOrderNo;
+	
+	@Value("${laporan.penjualan.shipping-name}")
+	private String salesShippingName;
+	
+	@Value("${laporan.penjualan.paid-price}")
+	private String salesPaidPrice;
+	
+	@Value("${laporan.penjualan.tracking-code}")
+	private String salesTrackingCode;
+	
+	@Value("${laporan.penjualan.delimiter}")
+	private String salesDelimiter;
+	
+	@Value("${laporan.order.no-pesanan}")
+	private String orderNo;
+	
+	@Value("${laporan.order.status-pesanan}")
+	private String orderStatus;
+	
+	@Value("${laporan.order.no-resi}")
+	private String orderResiNumber;
+	
+	@Value("${laporan.order.waktu-pembayaran}")
+	private String orderPaymentDate;
+	
+	@Value("${laporan.order.total-harga-produk}")
+	private String orderTotalProductPrice;
+	
+	@Value("${laporan.income.no-pesanan}")
+	private String incomeOrderNo;
+	
+	@Value("${laporan.income.total-penghasilan}")
+	private String incomeAmount;
+	
+	private int convertColumnToIndex(String column) {
+		int n = 0;
+		for (int i = 1; i <= column.length(); i++) {
+			char c =  column.toUpperCase().charAt(column.length() - i);
+		    n += (c - 'A' + 1) * Math.pow(26, i - 1);
+		}
+		return n - 1;
+	}
 
 	public List<Payment> readPaymentFile(InputStream inputStream) throws ReportException, IOException {
 		List<Payment> payments = new ArrayList<>();
 		InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+		int orderNoIndex = convertColumnToIndex(paymentOrderNoColumn);
+		log.info("Index of Order Number: {} - {}", paymentOrderNoColumn, orderNoIndex);
+		
 		int row = 0;
-		try (CSVReader br = new CSVReader(inputStreamReader)) {
+		CSVParser parser = new CSVParserBuilder().withSeparator(paymentDelimiter.charAt(0)).build();
+		try (CSVReader br = new CSVReaderBuilder(inputStreamReader).withCSVParser(parser).build()) {
 			try {
 				String[] line;
 				while ((line = br.readNext()) != null) {
@@ -50,7 +106,7 @@ public class FileReader {
 						continue; 
 					}
 					Payment payment = new Payment();
-					payment.setOrderNumber(line[13]);
+					payment.setOrderNumber(line[orderNoIndex]);
 					payments.add(payment);
 				}
 			} catch (Exception e) {
@@ -69,7 +125,12 @@ public class FileReader {
 		List<Sale> sales = new ArrayList<>();
 		InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
 		int row = 0;
-		CSVParser parser = new CSVParserBuilder().withSeparator(';').build();
+		
+		int orderNoIndex = convertColumnToIndex(salesOrderNo);
+		int shippingNameIndex = convertColumnToIndex(salesShippingName);
+		int paidAmountIndex = convertColumnToIndex(salesPaidPrice);
+		int trackingCodeIndex = convertColumnToIndex(salesTrackingCode);
+		CSVParser parser = new CSVParserBuilder().withSeparator(salesDelimiter.charAt(0)).build();
 		try (CSVReader br = new CSVReaderBuilder(inputStreamReader).withCSVParser(parser).build()) {
 			String[] line;
 			try {
@@ -80,13 +141,13 @@ public class FileReader {
 					}
 					
 					Sale sale = new Sale();
-					sale.setOrderNumber(line[9]);
-					sale.setShippingName(line[14]);
+					sale.setOrderNumber(line[orderNoIndex]);
+					sale.setShippingName(line[shippingNameIndex]);
 					
-					if (line[37] != null) {
-						sale.setPaidAmount(new BigDecimal(line[38]));
+					if (line[paidAmountIndex] != null) {
+						sale.setPaidAmount(new BigDecimal(line[paidAmountIndex]));
 					}
-					sale.setTrackingCode(line[49]);
+					sale.setTrackingCode(line[trackingCodeIndex]);
 					sales.add(sale);
 				}
 				log.info("Sales Records size: {}", sales.size());
@@ -239,22 +300,26 @@ public class FileReader {
 			    	Row row = rowIterator.next();
 			        Iterator<Cell> cellIterator = row.cellIterator();
 			        i = 0;
+			        int orderNoIndex = convertColumnToIndex(orderNo);
+			        int orderStatusIndex = convertColumnToIndex(orderStatus);
+			        int orderResiIndex = convertColumnToIndex(orderResiNumber);
+			        int orderPaymentDateIndex = convertColumnToIndex(orderPaymentDate);
+			        int orderTotalPriceIndex = convertColumnToIndex(orderTotalProductPrice);
 			        if (++rowNum > 1) {
 				        Order order = new Order();
 				        while (cellIterator.hasNext()) {
-				        	i++;
 				        	Cell cell = cellIterator.next();
 				            try {
 	//			            	try {
-				            		if (i == 1) {
+				            		if (i == orderNoIndex) {
 				            			order.setOrderNumber(cell.getStringCellValue());
-				            		} else if (i == 2) {
+				            		} else if (i == orderStatusIndex) {
 				            			order.setOrderStatus(cell.getStringCellValue());
-				            		} else if (i == 4) {
+				            		} else if (i == orderResiIndex) {
 				            			order.setResiNumber(cell.getStringCellValue());
-				            		} else if (i == 10) {
+				            		} else if (i == orderPaymentDateIndex) {
 					            		order.setPaymentDate(cell.getStringCellValue());
-				            		} else if (i == 18) {
+				            		} else if (i == orderTotalPriceIndex) {
 				            			order.setTotalProductPrice(cell.getStringCellValue());
 				            		}
 	//			            	} catch (IllegalStateException e) {
@@ -266,6 +331,7 @@ public class FileReader {
 				            } catch (IllegalStateException e) {
 				            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
 				            }
+				            i++;
 				        }
 				        orderList.add(order);
 			        }
@@ -292,16 +358,17 @@ public class FileReader {
 			    	Row row = rowIterator.next();
 			        Iterator<Cell> cellIterator = row.cellIterator();
 			        i = 0;
+			        int orderNoIndex = convertColumnToIndex(incomeOrderNo);
+			        int amountIndex = convertColumnToIndex(incomeAmount);
 			        if (++rowNum > 6) {
 				        Income income = new Income();
 				        while (cellIterator.hasNext()) {
-				        	i++;
 				        	Cell cell = cellIterator.next();
 				            try {
 	//			            	try {
-				            		if (i == 2) {
+				            		if (i == orderNoIndex) {
 				            			income.setOrderNumber(cell.getStringCellValue());
-				            		} else if (i == 22) {
+				            		} else if (i == amountIndex) {
 				            			Pattern p1 = Pattern.compile("[\\d]+");
 				            			Matcher m1 = p1.matcher(cell.getStringCellValue());
 				            			
@@ -320,6 +387,7 @@ public class FileReader {
 				            } catch (IllegalStateException e) {
 				            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
 				            }
+				            i++;
 				        }
 				        incomeList.add(income);
 			        }
