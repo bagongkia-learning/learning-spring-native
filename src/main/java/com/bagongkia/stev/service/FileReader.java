@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,7 +17,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.bagongkia.stev.ReportException;
@@ -38,47 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class FileReader {
 	
-	@Value("${laporan.uang-masuk.order-no}")
-	private String paymentOrderNoColumn;
-	
-	@Value("${laporan.uang-masuk.delimiter}")
-	private String paymentDelimiter;
-	
-	@Value("${laporan.penjualan.order-no}")
-	private String salesOrderNo;
-	
-	@Value("${laporan.penjualan.shipping-name}")
-	private String salesShippingName;
-	
-	@Value("${laporan.penjualan.paid-price}")
-	private String salesPaidPrice;
-	
-	@Value("${laporan.penjualan.tracking-code}")
-	private String salesTrackingCode;
-	
-	@Value("${laporan.penjualan.delimiter}")
-	private String salesDelimiter;
-	
-	@Value("${laporan.order.no-pesanan}")
-	private String orderNo;
-	
-	@Value("${laporan.order.status-pesanan}")
-	private String orderStatus;
-	
-	@Value("${laporan.order.no-resi}")
-	private String orderResiNumber;
-	
-	@Value("${laporan.order.waktu-pembayaran}")
-	private String orderPaymentDate;
-	
-	@Value("${laporan.order.total-harga-produk}")
-	private String orderTotalProductPrice;
-	
-	@Value("${laporan.income.no-pesanan}")
-	private String incomeOrderNo;
-	
-	@Value("${laporan.income.total-penghasilan}")
-	private String incomeAmount;
+	@Autowired
+	private FileStorageService fileStorageService;
 	
 	private int convertColumnToIndex(String column) {
 		int n = 0;
@@ -92,11 +54,10 @@ public class FileReader {
 	public List<Payment> readPaymentFile(InputStream inputStream) throws ReportException, IOException {
 		List<Payment> payments = new ArrayList<>();
 		InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-		int orderNoIndex = convertColumnToIndex(paymentOrderNoColumn);
-		log.info("Index of Order Number: {} - {}", paymentOrderNoColumn, orderNoIndex);
-		
+		Map<String, String> configMap = fileStorageService.getConfig();
+		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.uang-masuk.order-no"));
 		int row = 0;
-		CSVParser parser = new CSVParserBuilder().withSeparator(paymentDelimiter.charAt(0)).build();
+		CSVParser parser = new CSVParserBuilder().withSeparator(configMap.get("laporan.uang-masuk.delimiter").charAt(0)).build();
 		try (CSVReader br = new CSVReaderBuilder(inputStreamReader).withCSVParser(parser).build()) {
 			try {
 				String[] line;
@@ -126,11 +87,12 @@ public class FileReader {
 		InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
 		int row = 0;
 		
-		int orderNoIndex = convertColumnToIndex(salesOrderNo);
-		int shippingNameIndex = convertColumnToIndex(salesShippingName);
-		int paidAmountIndex = convertColumnToIndex(salesPaidPrice);
-		int trackingCodeIndex = convertColumnToIndex(salesTrackingCode);
-		CSVParser parser = new CSVParserBuilder().withSeparator(salesDelimiter.charAt(0)).build();
+		Map<String, String> configMap = fileStorageService.getConfig();
+		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.penjualan.order-no"));
+		int shippingNameIndex = convertColumnToIndex(configMap.get("laporan.penjualan.shipping-name"));
+		int paidAmountIndex = convertColumnToIndex(configMap.get("laporan.penjualan.paid-price"));
+		int trackingCodeIndex = convertColumnToIndex(configMap.get("laporan.penjualan.tracking-code"));
+		CSVParser parser = new CSVParserBuilder().withSeparator(configMap.get("laporan.penjualan.delimiter").charAt(0)).build();
 		try (CSVReader br = new CSVReaderBuilder(inputStreamReader).withCSVParser(parser).build()) {
 			String[] line;
 			try {
@@ -288,6 +250,13 @@ public class FileReader {
 	
 	public List<Order> readOrderFile(InputStream inputStream) throws IOException, ReportException {
 		List<Order> orderList = new ArrayList<>();
+		Map<String, String> configMap = fileStorageService.getConfig();
+		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.order.no-pesanan"));
+        int orderStatusIndex = convertColumnToIndex(configMap.get("laporan.order.status-pesanan"));
+        int orderResiIndex = convertColumnToIndex(configMap.get("laporan.order.no-resi"));
+        int orderPaymentDateIndex = convertColumnToIndex(configMap.get("laporan.order.waktu-pembayaran"));
+        int orderTotalPriceIndex = convertColumnToIndex(configMap.get("laporan.order.total-harga-produk"));
+		
 		Workbook workbook = WorkbookFactory.create(inputStream);
 		try {
 			Iterator<Sheet> sheetIterator = workbook.iterator();
@@ -300,11 +269,6 @@ public class FileReader {
 			    	Row row = rowIterator.next();
 			        Iterator<Cell> cellIterator = row.cellIterator();
 			        i = 0;
-			        int orderNoIndex = convertColumnToIndex(orderNo);
-			        int orderStatusIndex = convertColumnToIndex(orderStatus);
-			        int orderResiIndex = convertColumnToIndex(orderResiNumber);
-			        int orderPaymentDateIndex = convertColumnToIndex(orderPaymentDate);
-			        int orderTotalPriceIndex = convertColumnToIndex(orderTotalProductPrice);
 			        if (++rowNum > 1) {
 				        Order order = new Order();
 				        while (cellIterator.hasNext()) {
@@ -346,6 +310,9 @@ public class FileReader {
 	
 	public List<Income> readIncomeFile(InputStream inputStream) throws IOException, ReportException {
 		List<Income> incomeList = new ArrayList<>();
+		Map<String, String> configMap = fileStorageService.getConfig();
+		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.income.no-pesanan"));
+        int amountIndex = convertColumnToIndex(configMap.get("laporan.income.total-penghasilan"));
 		Workbook workbook = WorkbookFactory.create(inputStream);
 		try {
 			Iterator<Sheet> sheetIterator = workbook.iterator();
@@ -358,8 +325,6 @@ public class FileReader {
 			    	Row row = rowIterator.next();
 			        Iterator<Cell> cellIterator = row.cellIterator();
 			        i = 0;
-			        int orderNoIndex = convertColumnToIndex(incomeOrderNo);
-			        int amountIndex = convertColumnToIndex(incomeAmount);
 			        if (++rowNum > 6) {
 				        Income income = new Income();
 				        while (cellIterator.hasNext()) {
