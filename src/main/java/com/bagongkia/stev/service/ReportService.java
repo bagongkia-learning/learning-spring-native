@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -74,7 +75,7 @@ public class ReportService {
 	
 	public void generateLostItemsReport(MultipartFile salesFile, MultipartFile paymentFile, 
 			MultipartFile returnedItemsFile, MultipartFile lostItemsFile) throws Exception {
-		List<Sale> sales = fileReader.readSalesFile(salesFile.getInputStream());
+		List<Sale> sales = fileReader.readSalesFile(salesFile.getInputStream(), FilenameUtils.getExtension(salesFile.getOriginalFilename()));
 		List<Payment> payments = fileReader.readPaymentFile(paymentFile.getInputStream());
 		List<ReturnedItem> returnedItems = new ArrayList<>();
 		if (returnedItemsFile != null) {
@@ -88,7 +89,7 @@ public class ReportService {
 	}
 
 	public void generateInvoiceReport(MultipartFile salesFile, MultipartFile exitItemsFile) throws Exception {
-		List<Sale> sales = fileReader.readSalesFile(salesFile.getInputStream());
+		List<Sale> sales = fileReader.readSalesFile(salesFile.getInputStream(), FilenameUtils.getExtension(salesFile.getOriginalFilename()));
 		List<ExitItem> exitItems = fileReader.readExitItemsFile(exitItemsFile.getInputStream());
 		invoiceWriter.writeUnprintedInvoice(sales, exitItems);
 		invoiceWriter.writeMultiplePrintedInvoice(sales, exitItems);

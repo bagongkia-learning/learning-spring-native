@@ -82,44 +82,94 @@ public class FileReader {
 		return payments;
 	}
 	
-	public List<Sale> readSalesFile(InputStream inputStream) throws ReportException, IOException {
+	public List<Sale> readSalesFile(InputStream inputStream, String extName) throws ReportException, IOException {
 		List<Sale> sales = new ArrayList<>();
 		InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-		int row = 0;
 		
 		Map<String, String> configMap = fileStorageService.getConfig();
 		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.penjualan.order-no"));
 		int shippingNameIndex = convertColumnToIndex(configMap.get("laporan.penjualan.shipping-name"));
 		int paidAmountIndex = convertColumnToIndex(configMap.get("laporan.penjualan.paid-price"));
 		int trackingCodeIndex = convertColumnToIndex(configMap.get("laporan.penjualan.tracking-code"));
-		CSVParser parser = new CSVParserBuilder().withSeparator(configMap.get("laporan.penjualan.delimiter").charAt(0)).build();
-		try (CSVReader br = new CSVReaderBuilder(inputStreamReader).withCSVParser(parser).build()) {
-			String[] line;
+		
+		if (extName != null && "CSV".equals(extName.toUpperCase())) {
+			int row = 0;
+			CSVParser parser = new CSVParserBuilder().withSeparator(configMap.get("laporan.penjualan.delimiter").charAt(0)).build();
+			try (CSVReader br = new CSVReaderBuilder(inputStreamReader).withCSVParser(parser).build()) {
+				String[] line;
+				try {
+					while ((line = br.readNext()) != null) {
+						row++;
+						if (row == 1) {
+							continue; 
+						}
+						
+						Sale sale = new Sale();
+						sale.setOrderNumber(line[orderNoIndex]);
+						sale.setShippingName(line[shippingNameIndex]);
+						
+						if (line[paidAmountIndex] != null) {
+							sale.setPaidAmount(new BigDecimal(line[paidAmountIndex]));
+						}
+						sale.setTrackingCode(line[trackingCodeIndex]);
+						sales.add(sale);
+					}
+					log.info("Sales Records size: {}", sales.size());
+				} catch(Exception e) {
+					throw new ReportException("PLEASE RECHECK ROW " + row, e);
+				} finally {
+					br.close();
+				}
+			} finally {
+				inputStreamReader.close();
+			}
+		} else {
+			Workbook workbook = WorkbookFactory.create(inputStream);
 			try {
-				while ((line = br.readNext()) != null) {
-					row++;
-					if (row == 1) {
-						continue; 
-					}
-					
-					Sale sale = new Sale();
-					sale.setOrderNumber(line[orderNoIndex]);
-					sale.setShippingName(line[shippingNameIndex]);
-					
-					if (line[paidAmountIndex] != null) {
-						sale.setPaidAmount(new BigDecimal(line[paidAmountIndex]));
-					}
-					sale.setTrackingCode(line[trackingCodeIndex]);
-					sales.add(sale);
+				Iterator<Sheet> sheetIterator = workbook.iterator();
+				int i = 0;
+				if (sheetIterator.hasNext()) {
+					Sheet sheet = sheetIterator.next();
+					Iterator<Row> rowIterator = sheet.iterator();
+					int rowNum = 0;
+				    while (rowIterator.hasNext()) {
+				    	Row row = rowIterator.next();
+				        Iterator<Cell> cellIterator = row.cellIterator();
+				        i = 0;
+				        if (++rowNum > 1) {
+				        	Sale sale = new Sale();
+					        while (cellIterator.hasNext()) {
+					        	Cell cell = cellIterator.next();
+					            try {
+				            		if (i == orderNoIndex) {
+				            			sale.setOrderNumber(cell.getStringCellValue());
+				            		} else if (i == shippingNameIndex) {
+				            			sale.setShippingName(cell.getStringCellValue());
+				            		} else if (i == paidAmountIndex) {
+				            			try {
+				            				sale.setPaidAmount(new BigDecimal(cell.getStringCellValue()));
+				            			} catch (IllegalStateException e) {
+				            				sale.setPaidAmount(new BigDecimal(cell.getNumericCellValue()));
+				            			}
+				            		} else if (i == trackingCodeIndex) {
+					            		sale.setTrackingCode(cell.getStringCellValue());
+				            		}
+					            } catch (IllegalStateException e) {
+					            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
+					            }
+					            i++;
+					        }
+					        if (rowNum == 2) {
+		            			log.info("{}", sale.toString());
+		            		}
+					        sales.add(sale);
+				        }
+			        }
 				}
 				log.info("Sales Records size: {}", sales.size());
-			} catch(Exception e) {
-				throw new ReportException("PLEASE RECHECK ROW " + row, e);
 			} finally {
-				br.close();
+				workbook.close();
 			}
-		} finally {
-			inputStreamReader.close();
 		}
 		return sales;
 	}	
