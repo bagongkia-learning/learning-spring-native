@@ -144,7 +144,7 @@ public class LostItemsFileWriter {
 	
 	private Boolean isTrackingCodeExistsInReturnedItems(List<ReturnedItem> returnedItems, String trackingCode) {
 		if (trackingCode == null || trackingCode.isEmpty()) {
-			return false;
+			return true;
 		}
 		return returnedItems.stream().anyMatch(item -> {
 			Boolean exist = item != null && item.getTrackingCode() != null && trackingCode.trim().equalsIgnoreCase(item.getTrackingCode().trim());

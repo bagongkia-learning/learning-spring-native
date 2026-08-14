@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-public class LostOrdersFileWriter {
+public class LostOrdersFileWriterV4 {
 
 	public void write(List<Order> lostOrders, List<Order> orders, List<Income> incomes, List<ReturnedItem> returnedItems) throws IOException {
 		Map<String, Order> lostOrdersMap = new LinkedHashMap<>();
@@ -179,7 +179,7 @@ public class LostOrdersFileWriter {
 		Path path = Paths.get("download").toAbsolutePath().normalize();
 		Files.createDirectories(path);
 		
-		FileOutputStream file = new FileOutputStream("download/lost-orders-report.xlsx");
+		FileOutputStream file = new FileOutputStream("download/lost-orders-report-v4.xlsx");
 		workbook.write(file);
 		
 		file.close();
