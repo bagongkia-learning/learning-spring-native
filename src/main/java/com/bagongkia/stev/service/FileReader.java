@@ -468,7 +468,7 @@ public class FileReader {
 		} finally {
 			workbook.close();
 		}
-		log.info("Order List Records size: {}", orderList.size());
+		log.info("Lost Order List Records size: {}", orderList.size());
 		return orderList;
 	}
 	

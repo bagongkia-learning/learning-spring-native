@@ -16,7 +16,7 @@
 	<description>Stevenie's Reporting Project</description>
 	
 	<properties>
-		<java.version>1.8</java.version>
+		<java.version>11</java.version>
 		<repackage.classifier />
 		<main.class>com.bagongkia.stev.StevReportApplication</main.class>
 		<spring-native.version>0.11.3</spring-native.version>

@@ -43,6 +43,9 @@ public class ReportService {
 	private LostOrdersFileWriterV3 lostOrdersFileWriterV3;
 	
 	@Autowired
+	private LostOrdersFileWriterV4 lostOrdersFileWriterV4;
+	
+	@Autowired
 	private InvoiceWriter invoiceWriter;
 	
 	public void storeLostItemsFile(MultipartFile file) throws IOException {
@@ -154,7 +157,7 @@ public class ReportService {
 		if (lostOrdersFile != null) {
 			lostOrders = fileReaderV4.readLostOrdersFile(lostOrdersFile.getInputStream());
 		}
-		lostOrdersFileWriter.write(lostOrders, orders, incomes, returnedItems);
+		lostOrdersFileWriterV4.write(lostOrders, orders, incomes, returnedItems);
 	}
 	
 	public Resource getLostOrdersReportV4() {

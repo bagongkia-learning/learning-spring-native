@@ -200,48 +200,51 @@ public class FileReaderV4 {
 		Map<String, String> configMap = fileStorageService.getConfig();
 		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.income-v4.no-pesanan"));
         int amountIndex = convertColumnToIndex(configMap.get("laporan.income-v4.total-penghasilan"));
+        int sheetIndex = Integer.valueOf(configMap.get("laporan.income-v4.sheet-index"));
 		Workbook workbook = WorkbookFactory.create(inputStream);
 		try {
-			Iterator<Sheet> sheetIterator = workbook.iterator();
-			int i = 0;
-			if (sheetIterator.hasNext()) {
-				Sheet sheet = sheetIterator.next();
-				Iterator<Row> rowIterator = sheet.iterator();
-				int rowNum = 0;
-			    while (rowIterator.hasNext()) {
-			    	Row row = rowIterator.next();
-			        Iterator<Cell> cellIterator = row.cellIterator();
-			        i = 0;
-			        if (++rowNum > 6) {
-				        Income income = new Income();
-				        while (cellIterator.hasNext()) {
-				        	Cell cell = cellIterator.next();
-				            try {
-			            		if (i == orderNoIndex) {
-			            			income.setOrderNumber(getStringValueFromCell(cell));
-			            		} else if (i == amountIndex) {
-			            			try {
-			            				Pattern p1 = Pattern.compile("[\\d]+");
-				            			Matcher m1 = p1.matcher(cell.getStringCellValue());
-				            			if (m1.find()) {
-				            				income.setAmount(parseBigDecimal(m1.group()));
-				            			} else {
-				            				income.setAmount(BigDecimal.ZERO);
-				            			}
-			            			} catch (IllegalStateException e) {
-			            				BigDecimal amount = new BigDecimal(cell.getNumericCellValue());
-			            				income.setAmount(amount);
+//			Iterator<Sheet> sheetIterator = workbook.iterator();
+//			int i = 0;
+//			if (sheetIterator.hasNext()) {
+//				Sheet sheet = sheetIterator.next();
+			
+			Sheet sheet = workbook.getSheetAt(sheetIndex - 1);
+			Iterator<Row> rowIterator = sheet.iterator();
+			int rowNum = 0;
+		    while (rowIterator.hasNext()) {
+		    	Row row = rowIterator.next();
+		        Iterator<Cell> cellIterator = row.cellIterator();
+		        int i = 0;
+		        if (++rowNum > 6) {
+			        Income income = new Income();
+			        while (cellIterator.hasNext()) {
+			        	Cell cell = cellIterator.next();
+			            try {
+		            		if (i == orderNoIndex) {
+		            			income.setOrderNumber(getStringValueFromCell(cell));
+		            		} else if (i == amountIndex) {
+		            			try {
+		            				Pattern p1 = Pattern.compile("[\\d]+");
+			            			Matcher m1 = p1.matcher(cell.getStringCellValue());
+			            			if (m1.find()) {
+			            				income.setAmount(parseBigDecimal(m1.group()));
+			            			} else {
+			            				income.setAmount(BigDecimal.ZERO);
 			            			}
-			            		}
-				            } catch (IllegalStateException e) {
-				            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
-				            }
-				            i++;
-				        }
-				        incomeList.add(income);
+		            			} catch (IllegalStateException e) {
+		            				BigDecimal amount = new BigDecimal(cell.getNumericCellValue());
+		            				income.setAmount(amount);
+		            			}
+		            		}
+			            } catch (IllegalStateException e) {
+			            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
+			            }
+			            i++;
 			        }
+			        incomeList.add(income);
 		        }
-			}
+	        }
+//			}
 		} finally {
 			workbook.close();
 		}
@@ -300,7 +303,7 @@ public class FileReaderV4 {
 		} finally {
 			workbook.close();
 		}
-		log.info("Order List Records size: {}", orderList.size());
+		log.info("Lost Order List Records size: {}", orderList.size());
 		return orderList;
 	}
 	
