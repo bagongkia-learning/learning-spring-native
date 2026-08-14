@@ -32,7 +32,6 @@ jobs:
         with:
           java-version: '11'
           distribution: 'liberica'
-          components: 'native-image'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           
       - name: 'Change Maven Mode'
