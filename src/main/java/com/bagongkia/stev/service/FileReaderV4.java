@@ -2,7 +2,6 @@ package com.bagongkia.stev.service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -24,23 +23,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.bagongkia.stev.ReportException;
-import com.bagongkia.stev.model.ExitItem;
 import com.bagongkia.stev.model.Income;
 import com.bagongkia.stev.model.LostItem;
 import com.bagongkia.stev.model.Order;
-import com.bagongkia.stev.model.Payment;
 import com.bagongkia.stev.model.ReturnedItem;
-import com.bagongkia.stev.model.Sale;
-import com.opencsv.CSVParser;
-import com.opencsv.CSVParserBuilder;
-import com.opencsv.CSVReader;
-import com.opencsv.CSVReaderBuilder;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-public class FileReader {
+public class FileReaderV4 {
 	
 	@Autowired
 	private FileStorageService fileStorageService;
@@ -52,129 +44,6 @@ public class FileReader {
 		    n += (c - 'A' + 1) * Math.pow(26, i - 1);
 		}
 		return n - 1;
-	}
-
-	public List<Payment> readPaymentFile(InputStream inputStream) throws ReportException, IOException {
-		List<Payment> payments = new ArrayList<>();
-		InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-		Map<String, String> configMap = fileStorageService.getConfig();
-		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.uang-masuk.order-no"));
-		int row = 0;
-		CSVParser parser = new CSVParserBuilder().withSeparator(configMap.get("laporan.uang-masuk.delimiter").charAt(0)).build();
-		try (CSVReader br = new CSVReaderBuilder(inputStreamReader).withCSVParser(parser).build()) {
-			try {
-				String[] line;
-				while ((line = br.readNext()) != null) {
-					row++;
-					if (row == 1) {
-						continue; 
-					}
-					Payment payment = new Payment();
-					payment.setOrderNumber(line[orderNoIndex]);
-					payments.add(payment);
-				}
-			} catch (Exception e) {
-				throw new ReportException("PLEASE RECHECK ROW " + row, e);
-			} finally {
-				br.close();
-			}
-			log.info("Payment Records size: {}", payments.size());
-		} finally {
-			inputStreamReader.close();
-		}
-		return payments;
-	}
-	
-	public List<Sale> readSalesFile(InputStream inputStream, String extName) throws ReportException, IOException {
-		List<Sale> sales = new ArrayList<>();
-		InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-		
-		Map<String, String> configMap = fileStorageService.getConfig();
-		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.penjualan.order-no"));
-		int shippingNameIndex = convertColumnToIndex(configMap.get("laporan.penjualan.shipping-name"));
-		int paidAmountIndex = convertColumnToIndex(configMap.get("laporan.penjualan.paid-price"));
-		int trackingCodeIndex = convertColumnToIndex(configMap.get("laporan.penjualan.tracking-code"));
-		
-		if (extName != null && "CSV".equals(extName.toUpperCase())) {
-			int row = 0;
-			CSVParser parser = new CSVParserBuilder().withSeparator(configMap.get("laporan.penjualan.delimiter").charAt(0)).build();
-			try (CSVReader br = new CSVReaderBuilder(inputStreamReader).withCSVParser(parser).build()) {
-				String[] line;
-				try {
-					while ((line = br.readNext()) != null) {
-						row++;
-						if (row == 1) {
-							continue; 
-						}
-						
-						Sale sale = new Sale();
-						sale.setOrderNumber(line[orderNoIndex]);
-						sale.setShippingName(line[shippingNameIndex]);
-						
-						if (line[paidAmountIndex] != null) {
-							sale.setPaidAmount(new BigDecimal(line[paidAmountIndex]));
-						}
-						sale.setTrackingCode(line[trackingCodeIndex]);
-						sales.add(sale);
-					}
-					log.info("Sales Records size: {}", sales.size());
-				} catch(Exception e) {
-					throw new ReportException("PLEASE RECHECK ROW " + row, e);
-				} finally {
-					br.close();
-				}
-			} finally {
-				inputStreamReader.close();
-			}
-		} else {
-			Workbook workbook = WorkbookFactory.create(inputStream);
-			try {
-				Iterator<Sheet> sheetIterator = workbook.iterator();
-				int i = 0;
-				if (sheetIterator.hasNext()) {
-					Sheet sheet = sheetIterator.next();
-					Iterator<Row> rowIterator = sheet.iterator();
-					int rowNum = 0;
-				    while (rowIterator.hasNext()) {
-				    	Row row = rowIterator.next();
-				        Iterator<Cell> cellIterator = row.cellIterator();
-				        i = 0;
-				        if (++rowNum > 1) {
-				        	Sale sale = new Sale();
-					        while (cellIterator.hasNext()) {
-					        	Cell cell = cellIterator.next();
-					            try {
-				            		if (i == orderNoIndex) {
-				            			sale.setOrderNumber(cell.getStringCellValue());
-				            		} else if (i == shippingNameIndex) {
-				            			sale.setShippingName(cell.getStringCellValue());
-				            		} else if (i == paidAmountIndex) {
-				            			try {
-				            				sale.setPaidAmount(new BigDecimal(cell.getStringCellValue()));
-				            			} catch (IllegalStateException e) {
-				            				sale.setPaidAmount(new BigDecimal(cell.getNumericCellValue()));
-				            			}
-				            		} else if (i == trackingCodeIndex) {
-					            		sale.setTrackingCode(cell.getStringCellValue());
-				            		}
-					            } catch (IllegalStateException e) {
-					            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
-					            }
-					            i++;
-					        }
-					        if (rowNum == 2) {
-		            			log.info("{}", sale.toString());
-		            		}
-					        sales.add(sale);
-				        }
-			        }
-				}
-				log.info("Sales Records size: {}", sales.size());
-			} finally {
-				workbook.close();
-			}
-		}
-		return sales;
 	}	
 
 	public List<ReturnedItem> readReturnedItemsFile(InputStream inputStream) throws EncryptedDocumentException, IOException, ReportException {
@@ -264,51 +133,14 @@ public class FileReader {
 		return lostItems;
 	}
 
-	public List<ExitItem> readExitItemsFile(InputStream inputStream) throws EncryptedDocumentException, IOException, ReportException {
-		List<ExitItem> exitItems = new ArrayList<>();
-		Workbook workbook = WorkbookFactory.create(inputStream);
-		try {
-			Iterator<Sheet> sheetIterator = workbook.iterator();
-			while (sheetIterator.hasNext()) {
-				Sheet sheet = sheetIterator.next();
-				Iterator<Row> rowIterator = sheet.iterator();
-			    while (rowIterator.hasNext()) {
-			    	Row row = rowIterator.next();
-			        Iterator<Cell> cellIterator = row.cellIterator();
-			        while (cellIterator.hasNext()) {
-			        	Cell cell = cellIterator.next();
-			            ExitItem item = new ExitItem();
-			            try {
-			            	try {
-			            		item.setTrackingCode(cell.getStringCellValue());
-			            	} catch (IllegalStateException e) {
-			            		BigDecimal trackingCode = new BigDecimal(cell.getNumericCellValue());
-				            	if (trackingCode.compareTo(BigDecimal.ZERO) > 0) {
-				            		item.setTrackingCode(trackingCode.toPlainString());
-				            	}
-			            	}
-			            } catch (IllegalStateException e) {
-			            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
-			            }
-			            exitItems.add(item);
-			        }
-		        }
-			}
-		} finally {
-			workbook.close();
-		}
-		log.info("Exit Items Records size: {}", exitItems.size());
-		return exitItems;
-	}
-	
 	public List<Order> readOrderFile(InputStream inputStream) throws IOException, ReportException {
 		List<Order> orderList = new ArrayList<>();
 		Map<String, String> configMap = fileStorageService.getConfig();
-		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.order.no-pesanan"));
-        int orderStatusIndex = convertColumnToIndex(configMap.get("laporan.order.status-pesanan"));
-        int orderResiIndex = convertColumnToIndex(configMap.get("laporan.order.no-resi"));
-        int orderPaymentDateIndex = convertColumnToIndex(configMap.get("laporan.order.waktu-pembayaran"));
-        int orderTotalPriceIndex = convertColumnToIndex(configMap.get("laporan.order.total-harga-produk"));
+		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.order-v4.no-pesanan"));
+        int orderStatusIndex = convertColumnToIndex(configMap.get("laporan.order-v4.status-pesanan"));
+        int orderResiIndex = convertColumnToIndex(configMap.get("laporan.order-v4.no-resi"));
+        int orderPaymentDateIndex = convertColumnToIndex(configMap.get("laporan.order-v4.waktu-pembayaran"));
+        int orderTotalPriceIndex = convertColumnToIndex(configMap.get("laporan.order-v4.total-harga-produk"));
 		
 		Workbook workbook = WorkbookFactory.create(inputStream);
 		try {
@@ -366,50 +198,53 @@ public class FileReader {
 	public List<Income> readIncomeFile(InputStream inputStream) throws IOException, ReportException {
 		List<Income> incomeList = new ArrayList<>();
 		Map<String, String> configMap = fileStorageService.getConfig();
-		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.income.no-pesanan"));
-        int amountIndex = convertColumnToIndex(configMap.get("laporan.income.total-penghasilan"));
+		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.income-v4.no-pesanan"));
+        int amountIndex = convertColumnToIndex(configMap.get("laporan.income-v4.total-penghasilan"));
+        int sheetIndex = Integer.valueOf(configMap.get("laporan.income-v4.sheet-index"));
 		Workbook workbook = WorkbookFactory.create(inputStream);
 		try {
-			Iterator<Sheet> sheetIterator = workbook.iterator();
-			int i = 0;
-			if (sheetIterator.hasNext()) {
-				Sheet sheet = sheetIterator.next();
-				Iterator<Row> rowIterator = sheet.iterator();
-				int rowNum = 0;
-			    while (rowIterator.hasNext()) {
-			    	Row row = rowIterator.next();
-			        Iterator<Cell> cellIterator = row.cellIterator();
-			        i = 0;
-			        if (++rowNum > 6) {
-				        Income income = new Income();
-				        while (cellIterator.hasNext()) {
-				        	Cell cell = cellIterator.next();
-				            try {
-			            		if (i == orderNoIndex) {
-			            			income.setOrderNumber(getStringValueFromCell(cell));
-			            		} else if (i == amountIndex) {
-			            			try {
-			            				Pattern p1 = Pattern.compile("[\\d]+");
-				            			Matcher m1 = p1.matcher(cell.getStringCellValue());
-				            			if (m1.find()) {
-				            				income.setAmount(parseBigDecimal(m1.group()));
-				            			} else {
-				            				income.setAmount(BigDecimal.ZERO);
-				            			}
-			            			} catch (IllegalStateException e) {
-			            				BigDecimal amount = new BigDecimal(cell.getNumericCellValue());
-			            				income.setAmount(amount);
+//			Iterator<Sheet> sheetIterator = workbook.iterator();
+//			int i = 0;
+//			if (sheetIterator.hasNext()) {
+//				Sheet sheet = sheetIterator.next();
+			
+			Sheet sheet = workbook.getSheetAt(sheetIndex - 1);
+			Iterator<Row> rowIterator = sheet.iterator();
+			int rowNum = 0;
+		    while (rowIterator.hasNext()) {
+		    	Row row = rowIterator.next();
+		        Iterator<Cell> cellIterator = row.cellIterator();
+		        int i = 0;
+		        if (++rowNum > 6) {
+			        Income income = new Income();
+			        while (cellIterator.hasNext()) {
+			        	Cell cell = cellIterator.next();
+			            try {
+		            		if (i == orderNoIndex) {
+		            			income.setOrderNumber(getStringValueFromCell(cell));
+		            		} else if (i == amountIndex) {
+		            			try {
+		            				Pattern p1 = Pattern.compile("[\\d]+");
+			            			Matcher m1 = p1.matcher(cell.getStringCellValue());
+			            			if (m1.find()) {
+			            				income.setAmount(parseBigDecimal(m1.group()));
+			            			} else {
+			            				income.setAmount(BigDecimal.ZERO);
 			            			}
-			            		}
-				            } catch (IllegalStateException e) {
-				            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
-				            }
-				            i++;
-				        }
-				        incomeList.add(income);
+		            			} catch (IllegalStateException e) {
+		            				BigDecimal amount = new BigDecimal(cell.getNumericCellValue());
+		            				income.setAmount(amount);
+		            			}
+		            		}
+			            } catch (IllegalStateException e) {
+			            	throw new ReportException("PLEASE RECHECK SHEET (" + sheet.getSheetName() + ") ON CELL " + cell.getAddress(), e);
+			            }
+			            i++;
 			        }
+			        incomeList.add(income);
 		        }
-			}
+	        }
+//			}
 		} finally {
 			workbook.close();
 		}
@@ -422,11 +257,11 @@ public class FileReader {
 		Workbook workbook = WorkbookFactory.create(inputStream);
 		
 		Map<String, String> configMap = fileStorageService.getConfig();
-		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.barang-hilang.no-pesanan"));
-		int resiNoIndex = convertColumnToIndex(configMap.get("laporan.barang-hilang.no-resi"));
-		int paymentDateIndex = convertColumnToIndex(configMap.get("laporan.barang-hilang.waktu-pembayaran"));
-		int totalPriceIndex = convertColumnToIndex(configMap.get("laporan.barang-hilang.total-harga"));
-		int orderStatusIndex = convertColumnToIndex(configMap.get("laporan.barang-hilang.status-pesanan"));
+		int orderNoIndex = convertColumnToIndex(configMap.get("laporan.barang-hilang-v4.no-pesanan"));
+		int resiNoIndex = convertColumnToIndex(configMap.get("laporan.barang-hilang-v4.no-resi"));
+		int paymentDateIndex = convertColumnToIndex(configMap.get("laporan.barang-hilang-v4.waktu-pembayaran"));
+		int totalPriceIndex = convertColumnToIndex(configMap.get("laporan.barang-hilang-v4.total-harga"));
+		int orderStatusIndex = convertColumnToIndex(configMap.get("laporan.barang-hilang-v4.status-pesanan"));
 		try {
 			Iterator<Sheet> sheetIterator = workbook.iterator();
 			int i = 0;

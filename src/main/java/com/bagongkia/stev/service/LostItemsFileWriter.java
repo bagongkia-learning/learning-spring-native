@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Cell;
-//import org.apache.poi.ss.usermodel.CellStyle;
-//import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -71,11 +71,11 @@ public class LostItemsFileWriter {
 		Workbook workbook = new XSSFWorkbook();
 		Sheet sheet = workbook.createSheet("Sheet 1");
 		
-//		Font headerFont = workbook.createFont();
-//	    headerFont.setBold(true);
-//	    
-//	    CellStyle headerCellStyle = workbook.createCellStyle();
-//	    headerCellStyle.setFont(headerFont);
+		Font headerFont = workbook.createFont();
+	    headerFont.setBold(true);
+	    
+	    CellStyle headerCellStyle = workbook.createCellStyle();
+	    headerCellStyle.setFont(headerFont);
 	    
 		Integer i = 0;
 		
@@ -86,13 +86,13 @@ public class LostItemsFileWriter {
 		Cell cell3s = row1.createCell(3);
 		
 		cell0s.setCellValue("No.");
-//		cell0s.setCellStyle(headerCellStyle);
+		cell0s.setCellStyle(headerCellStyle);
 		cell1s.setCellValue("Order Number");
-//		cell1s.setCellStyle(headerCellStyle);
+		cell1s.setCellStyle(headerCellStyle);
 		cell2s.setCellValue("Tracking Code");
-//		cell2s.setCellStyle(headerCellStyle);
+		cell2s.setCellStyle(headerCellStyle);
 		cell3s.setCellValue("Total Invoice");
-//		cell3s.setCellStyle(headerCellStyle);
+		cell3s.setCellStyle(headerCellStyle);
 		i++;
 		
 		for (Map.Entry<String, BigDecimal> entry : lostItemsMap.entrySet()) {
@@ -114,10 +114,10 @@ public class LostItemsFileWriter {
 			i++;
 		}
 		
-//		sheet.autoSizeColumn(0);
-//		sheet.autoSizeColumn(1);
-//		sheet.autoSizeColumn(2);
-//		sheet.autoSizeColumn(3);
+		sheet.autoSizeColumn(0);
+		sheet.autoSizeColumn(1);
+		sheet.autoSizeColumn(2);
+		sheet.autoSizeColumn(3);
 		
 		Path path = Paths.get("download").toAbsolutePath().normalize();
 		Files.createDirectories(path);
@@ -144,7 +144,7 @@ public class LostItemsFileWriter {
 	
 	private Boolean isTrackingCodeExistsInReturnedItems(List<ReturnedItem> returnedItems, String trackingCode) {
 		if (trackingCode == null || trackingCode.isEmpty()) {
-			return false;
+			return true;
 		}
 		return returnedItems.stream().anyMatch(item -> {
 			Boolean exist = item != null && item.getTrackingCode() != null && trackingCode.trim().equalsIgnoreCase(item.getTrackingCode().trim());

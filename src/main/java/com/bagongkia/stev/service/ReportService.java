@@ -28,10 +28,22 @@ public class ReportService {
 	private FileReader fileReader;
 	
 	@Autowired
+	private FileReaderV3 fileReaderV3;
+	
+	@Autowired
+	private FileReaderV4 fileReaderV4;
+	
+	@Autowired
 	private LostItemsFileWriter lostItemsFileWriter;
 	
 	@Autowired
 	private LostOrdersFileWriter lostOrdersFileWriter;
+	
+	@Autowired
+	private LostOrdersFileWriterV3 lostOrdersFileWriterV3;
+	
+	@Autowired
+	private LostOrdersFileWriterV4 lostOrdersFileWriterV4;
 	
 	@Autowired
 	private InvoiceWriter invoiceWriter;
@@ -112,5 +124,43 @@ public class ReportService {
 	
 	public Resource getLostOrdersReport() {
 		return fileStorageService.getFile("lost-orders-report.xlsx");
+	}
+	
+	public void generateLostOrdersReportV3(MultipartFile orderFile, MultipartFile incomeFile, 
+			MultipartFile returnedItemsFile, MultipartFile lostOrdersFile) throws Exception {
+		List<Order> orders = fileReaderV3.readOrderFile(orderFile.getInputStream());
+		List<Income> incomes = fileReaderV3.readIncomeFile(incomeFile.getInputStream());
+		List<ReturnedItem> returnedItems = new ArrayList<>();
+		if (returnedItemsFile != null) {
+			returnedItems = fileReaderV3.readReturnedItemsFile(returnedItemsFile.getInputStream());
+		}
+		List<Order> lostOrders = new ArrayList<>();
+		if (lostOrdersFile != null) {
+			lostOrders = fileReaderV3.readLostOrdersFile(lostOrdersFile.getInputStream());
+		}
+		lostOrdersFileWriterV3.write(lostOrders, orders, incomes, returnedItems);
+	}
+	
+	public Resource getLostOrdersReportV3() {
+		return fileStorageService.getFile("lost-orders-report-v3.xlsx");
+	}
+	
+	public void generateLostOrdersReportV4(MultipartFile orderFile, MultipartFile incomeFile, 
+			MultipartFile returnedItemsFile, MultipartFile lostOrdersFile) throws Exception {
+		List<Order> orders = fileReaderV4.readOrderFile(orderFile.getInputStream());
+		List<Income> incomes = fileReaderV4.readIncomeFile(incomeFile.getInputStream());
+		List<ReturnedItem> returnedItems = new ArrayList<>();
+		if (returnedItemsFile != null) {
+			returnedItems = fileReaderV4.readReturnedItemsFile(returnedItemsFile.getInputStream());
+		}
+		List<Order> lostOrders = new ArrayList<>();
+		if (lostOrdersFile != null) {
+			lostOrders = fileReaderV4.readLostOrdersFile(lostOrdersFile.getInputStream());
+		}
+		lostOrdersFileWriterV4.write(lostOrders, orders, incomes, returnedItems);
+	}
+	
+	public Resource getLostOrdersReportV4() {
+		return fileStorageService.getFile("lost-orders-report-v4.xlsx");
 	}
 }

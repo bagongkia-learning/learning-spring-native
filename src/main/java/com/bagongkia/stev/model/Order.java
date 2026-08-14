@@ -17,6 +17,7 @@ public class Order {
 	private String paymentDate;
 	private String totalProductPrice;
 	private String orderStatus;
+	private String rtsTime;
 	
 	private String currency;
 	private BigDecimal totalIncome;

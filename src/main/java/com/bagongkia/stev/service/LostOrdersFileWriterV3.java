@@ -35,29 +35,18 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-public class LostOrdersFileWriter {
+public class LostOrdersFileWriterV3 {
 
 	public void write(List<Order> lostOrders, List<Order> orders, List<Income> incomes, List<ReturnedItem> returnedItems) throws IOException {
 		Map<String, Order> lostOrdersMap = new LinkedHashMap<>();
 		Set<String> lostOrdersSet = new HashSet<>();
 		lostOrders.stream()
-//			.map(order -> {
-//				if (order.getTotalIncome() == null && BigDecimal.ZERO.compareTo(order.getTotalIncome()) == 0) {
-//					BigDecimal totalIncome = getTotalIncome(incomes, order.getOrderNumber());
-//					order.setTotalIncome(totalIncome == null ? BigDecimal.ZERO : totalIncome);
-//				}
-//				return order;
-//			})
 			.filter(order -> !isOrderNumberExistsInIncomes(incomes, order.getOrderNumber()))
 			.filter(order -> !isTrackingCodeExistsInReturnedItems(returnedItems, order.getResiNumber()))
 			.forEach(order -> {
 				lostOrdersSet.add(order.getOrderNumber());
 				Price price = extractPrice(order.getTotalProductPrice());
-				if (price.getAmount() == null) {
-					System.out.println("TEST" + order.getOrderNumber());
-				}
 				String key = order.getOrderNumber() + ";" + price.getCurrency();
-//				String key = order.getOrderNumber();
 				BigDecimal productPrice =  order.getTotalProductPrice() == null ? BigDecimal.ZERO : price.getAmount();
 				order.setCurrency(price.getCurrency());
 				if (lostOrdersMap.containsKey(key)) {
@@ -68,13 +57,11 @@ public class LostOrdersFileWriter {
 					order.setSumOfProductPrice(productPrice);
 					lostOrdersMap.put(key, order);
 				}
-//				if (!lostOrdersMap.containsKey(key)) {
-//					lostOrdersMap.put(key, order);
-//				}
 			});
 		
 		orders.stream()
-			.filter(item -> !lostOrdersSet.contains(item.getOrderNumber()))
+			.filter(item -> item.getRtsTime() != null && !item.getRtsTime().isEmpty())
+			.filter(item -> !lostOrdersSet.contains(item.getOrderNumber()))			
 			.map(item -> {
 				Order order = new Order();
 				if (item.getResiNumber() != null && !item.getResiNumber().isEmpty()) {
@@ -95,7 +82,6 @@ public class LostOrdersFileWriter {
 			.forEach(order -> {
 				Price price = extractPrice(order.getTotalProductPrice());
 				String key = order.getOrderNumber() + ";" + price.getCurrency();
-//				String key = order.getOrderNumber();
 				BigDecimal productPrice =  order.getTotalProductPrice() == null ? BigDecimal.ZERO : price.getAmount();
 				order.setCurrency(price.getCurrency());
 				if (lostOrdersMap.containsKey(key)) {
@@ -106,9 +92,6 @@ public class LostOrdersFileWriter {
 					order.setSumOfProductPrice(productPrice);
 					lostOrdersMap.put(key, order);
 				}
-//				if (!lostOrdersMap.containsKey(key)) {
-//					lostOrdersMap.put(key, order);
-//				}
 			});
 	
 		Workbook workbook = new XSSFWorkbook();
@@ -128,7 +111,6 @@ public class LostOrdersFileWriter {
 		Cell cell2s = row1.createCell(2);
 		Cell cell3s = row1.createCell(3);
 		Cell cell4s = row1.createCell(4);
-//		Cell cell5s = row1.createCell(5);
 		
 		cell0s.setCellValue("No.");
 		cell0s.setCellStyle(headerCellStyle);
@@ -140,8 +122,6 @@ public class LostOrdersFileWriter {
 		cell3s.setCellStyle(headerCellStyle);
 		cell4s.setCellValue("Total Harga Produk");
 		cell4s.setCellStyle(headerCellStyle);
-//		cell5s.setCellValue("Status Pesanan");
-//		cell5s.setCellStyle(headerCellStyle);
 		i++;
 		
 		DecimalFormat df = new DecimalFormat("###,##0");
@@ -158,14 +138,12 @@ public class LostOrdersFileWriter {
 			Cell cell2 = row.createCell(2);
 			Cell cell3 = row.createCell(3);
 			Cell cell4 = row.createCell(4);
-//			Cell cell5 = row.createCell(5);
 			
 			cell0.setCellValue(i);
 			cell1.setCellValue(order.getOrderNumber());
 			cell2.setCellValue(order.getResiNumber());
 			cell3.setCellValue(order.getPaymentDate());
 			cell4.setCellValue(order.getSumOfProductPrice().longValue());
-//			cell5.setCellValue(order.getOrderStatus());
 			i++;
 		}
 		
@@ -174,7 +152,6 @@ public class LostOrdersFileWriter {
 		sheet.autoSizeColumn(2);
 		sheet.autoSizeColumn(3);
 		sheet.autoSizeColumn(4);
-//		sheet.autoSizeColumn(5);
 		
 		Path path = Paths.get("download").toAbsolutePath().normalize();
 		Files.createDirectories(path);

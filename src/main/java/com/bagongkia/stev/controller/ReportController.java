@@ -243,4 +243,78 @@ public class ReportController {
 				.body(resource);
 	}
 	
+	@PostMapping(path = "/download-lost-orders-report-v3")
+	public String lostItemReportV3(
+			@RequestParam("orderFile") MultipartFile orderFile,
+			@RequestParam("incomeFile") MultipartFile incomeFile,
+			@RequestParam(name = "returnedItemsFile", required = false) MultipartFile returnedItemsFile,
+			@RequestParam(name = "lostOrdersFile", required = false) MultipartFile lostOrdersFile) {
+		try {
+			reportService.generateLostOrdersReportV3(orderFile, incomeFile, returnedItemsFile, lostOrdersFile);
+		} catch(ReportException e) {
+			log.error("Generate Lost Order Report Failure: {}", e);
+			return "FAILED - " + e.getMessage();
+		} catch(Exception e) {
+			log.error("Generate Lost Order Report Failure: {}", e);
+			return "FAILED";
+		}
+		return "COMPLETED";
+	}
+	
+	@GetMapping(path = "/download-lost-orders-report-v3", produces = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<Resource> downloadLostOrdersReportV3() throws Exception {
+		SimpleDateFormat fmt = new SimpleDateFormat("dd-MMM-yyyy");
+		
+		HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Laporan Barang Hilang V3 " + fmt.format(new Date()) + ".xlsx");
+        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+        headers.add("Pragma", "no-cache");
+        headers.add("Expires", "0");
+        
+        Resource resource = reportService.getLostOrdersReport();
+        
+		return ResponseEntity.ok()
+				.headers(headers)
+				.contentLength(resource.contentLength())
+				.contentType(MediaType.MULTIPART_FORM_DATA)
+				.body(resource);
+	}
+	
+	@PostMapping(path = "/download-lost-orders-report-v4")
+	public String lostItemReportV4(
+			@RequestParam("orderFile") MultipartFile orderFile,
+			@RequestParam("incomeFile") MultipartFile incomeFile,
+			@RequestParam(name = "returnedItemsFile", required = false) MultipartFile returnedItemsFile,
+			@RequestParam(name = "lostOrdersFile", required = false) MultipartFile lostOrdersFile) {
+		try {
+			reportService.generateLostOrdersReportV4(orderFile, incomeFile, returnedItemsFile, lostOrdersFile);
+		} catch(ReportException e) {
+			log.error("Generate Lost Order Report Failure: {}", e);
+			return "FAILED - " + e.getMessage();
+		} catch(Exception e) {
+			log.error("Generate Lost Order Report Failure: {}", e);
+			return "FAILED";
+		}
+		return "COMPLETED";
+	}
+	
+	@GetMapping(path = "/download-lost-orders-report-v4", produces = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ResponseEntity<Resource> downloadLostOrdersReportV4() throws Exception {
+		SimpleDateFormat fmt = new SimpleDateFormat("dd-MMM-yyyy");
+		
+		HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=Laporan Barang Hilang V4 " + fmt.format(new Date()) + ".xlsx");
+        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+        headers.add("Pragma", "no-cache");
+        headers.add("Expires", "0");
+        
+        Resource resource = reportService.getLostOrdersReportV4();
+        
+		return ResponseEntity.ok()
+				.headers(headers)
+				.contentLength(resource.contentLength())
+				.contentType(MediaType.MULTIPART_FORM_DATA)
+				.body(resource);
+	}
+	
 }
